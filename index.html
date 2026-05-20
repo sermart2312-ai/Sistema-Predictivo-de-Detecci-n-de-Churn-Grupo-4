@@ -1,565 +1,273 @@
-
-<h2 class="sr-only">Dashboard interactivo de detección de churn — Grupo 4 UNITEC. Lee datos en tiempo real desde Google Sheets.</h2>
+<h2 class="sr-only">Dashboard interactivo de detección de churn — Grupo 4 UNITEC. Entrenamiento, Blind Test y comparación en tiempo real desde Google Sheets.</h2>
 <meta charset="UTF-8">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 .db{background:#fff;font-family:'Segoe UI',Arial,sans-serif;}
 .topbar{background:#002D72;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
-.t-title{color:#fff;font-size:15px;font-weight:700;}
-.t-sub{color:#00CCCC;font-size:11px;margin-top:2px;}
-.t-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.badge{background:#00FFFF;color:#002D72;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;}
-.status-dot{width:8px;height:8px;border-radius:50%;background:#00FFFF;display:inline-block;}
-.status-lbl{color:#aac8f0;font-size:11px;}
-.refresh-btn{background:transparent;border:1px solid #00FFFF;color:#00FFFF;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;cursor:pointer;}
-.refresh-btn:hover{background:#00FFFF;color:#002D72;}
-.export-btn{background:transparent;border:1px solid #7FA8D4;color:#7FA8D4;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;cursor:pointer;}
-.export-btn:hover{background:#7FA8D4;color:#002D72;}
-.dark-btn{background:transparent;border:1px solid #aac8f0;color:#aac8f0;font-size:13px;padding:3px 8px;border-radius:3px;cursor:pointer;line-height:1;}
-.dark-btn:hover{background:#aac8f0;color:#002D72;}
-.body{padding:14px 16px;}
-.sec-lbl{background:#002D72;color:#00FFFF;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 12px;display:inline-block;margin-bottom:10px;}
-.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
-.kpi{background:#F4F7FC;border-left:3px solid #002D72;border-radius:3px;padding:10px 12px;}
-.kpi.cy{border-left-color:#00AAAA;}
-.kl{font-size:10px;color:#666;font-weight:700;letter-spacing:.4px;margin-bottom:4px;}
-.kv{font-size:20px;font-weight:700;color:#002D72;line-height:1.1;}
-.kv.cy{color:#007A7A;}
-.ks{font-size:10px;color:#999;margin-top:2px;}
-.row2{display:grid;grid-template-columns:1.1fr 1fr;gap:10px;margin-bottom:12px;}
-.panel{background:#fff;border:1px solid #D8E2F0;border-radius:3px;overflow:hidden;}
-.ph{background:#002D72;color:#fff;font-size:11px;font-weight:700;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;}
-.ph span{color:#00FFFF;font-size:9px;font-weight:400;}
-.pb{padding:12px;}
-.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.seg-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;}
-.sc{background:#002D72;color:#fff;}
-.sv{background:#00CCCC;color:#002D72;}
-.sl{background:#7FA8D4;color:#fff;}
-.tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
-.tbl th{background:#002D72;color:#fff;font-size:10px;font-weight:700;padding:6px 8px;text-align:left;cursor:pointer;user-select:none;}
-.tbl th:hover{background:#003a94;}
-.tbl th .sort-icon{margin-left:4px;opacity:.5;font-size:9px;}
-.tbl th.sort-asc .sort-icon::after{content:'▲';}
-.tbl th.sort-desc .sort-icon::after{content:'▼';}
-.tbl th:not(.sort-asc):not(.sort-desc) .sort-icon::after{content:'⇅';}
-.tbl td{padding:5px 8px;border-bottom:.5px solid #EEF2F8;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tbl tr:nth-child(even) td{background:#F8FAFD;}
-.tbl tr:hover td{background:#EEF5FF;}
-.footer{background:#002D72;color:#aac8f0;font-size:10px;padding:6px 16px;display:flex;justify-content:space-between;align-items:center;}
-.footer span{color:#00FFFF;}
-.loading{text-align:center;padding:30px;color:#002D72;font-size:13px;font-weight:600;}
-.error-box{background:#FFF0F0;border:1px solid #FFB3B3;border-radius:4px;padding:12px;font-size:12px;color:#8B0000;margin:8px 0;}
-.seg-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:.5px solid #EEF2F8;}
-.sn{font-size:18px;font-weight:700;color:#002D72;min-width:55px;}
-.si{flex:1;}
-.sname{font-size:11px;font-weight:700;color:#333;}
-.spct{font-size:10px;color:#888;}
-.srar{font-size:11px;font-weight:700;color:#B05000;text-align:right;min-width:60px;}
-/* ── Barra de filtros y búsqueda ── */
-.filter-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:8px 12px;background:#F4F7FC;border-bottom:1px solid #D8E2F0;}
-.seg-filters{display:flex;gap:6px;align-items:center;}
-.seg-filters label{font-size:10px;font-weight:700;color:#666;letter-spacing:.4px;}
-.filter-btn{border:none;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
-.filter-btn.all  {background:#E8EDF5;color:#002D72;}
-.filter-btn.all.active  {background:#002D72;color:#fff;}
-.filter-btn.crit {background:#E8EDF5;color:#002D72;}
-.filter-btn.crit.active {background:#002D72;color:#fff;}
-.filter-btn.vuln {background:#E8EDF5;color:#007A7A;}
-.filter-btn.vuln.active {background:#00AAAA;color:#002D72;}
-.filter-btn.leal {background:#E8EDF5;color:#4A7AAA;}
-.filter-btn.leal.active {background:#7FA8D4;color:#fff;}
-.filter-btn:hover{opacity:.85;}
-.search-box{display:flex;align-items:center;gap:6px;}
-.search-box label{font-size:10px;font-weight:700;color:#666;letter-spacing:.4px;}
-.search-input{border:1px solid #C8D4E8;border-radius:3px;padding:4px 8px;font-size:11px;color:#333;width:200px;outline:none;}
-.search-input:focus{border-color:#002D72;}
-/* ── Paginación ── */
-.pager{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#F8FAFD;border-top:1px solid #EEF2F8;font-size:11px;color:#666;}
-.pager-btns{display:flex;gap:4px;align-items:center;}
-.pg-btn{border:1px solid #C8D4E8;background:#fff;color:#002D72;font-size:11px;font-weight:700;padding:3px 9px;border-radius:3px;cursor:pointer;}
-.pg-btn:hover{background:#002D72;color:#fff;}
-.pg-btn.active{background:#002D72;color:#fff;border-color:#002D72;}
-.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
-.pg-select{border:1px solid #C8D4E8;border-radius:3px;padding:3px 6px;font-size:11px;color:#333;background:#fff;cursor:pointer;}
-/* Tooltip hover */
-.tbl td[title]{cursor:help;}
+.t-title{color:#fff;font-size:15px;font-weight:700;}.t-sub{color:#00CCCC;font-size:11px;margin-top:2px;}
+.t-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}.badge{background:#00FFFF;color:#002D72;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#00FFFF;display:inline-block;}.status-lbl{color:#aac8f0;font-size:11px;}
+.refresh-btn,.export-btn,.dark-btn{background:transparent;border:1px solid #00FFFF;color:#00FFFF;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;cursor:pointer;}
+.export-btn{border-color:#7FA8D4;color:#7FA8D4;}.dark-btn{border-color:#aac8f0;color:#aac8f0;font-size:13px;padding:3px 8px;line-height:1;}
+.refresh-btn:hover{background:#00FFFF;color:#002D72;}.export-btn:hover{background:#7FA8D4;color:#002D72;}.dark-btn:hover{background:#aac8f0;color:#002D72;}
+.tabs{display:flex;gap:6px;padding:10px 16px 0;background:#F4F7FC;border-bottom:1px solid #D8E2F0;}
+.tab-btn{border:1px solid #C8D4E8;background:#fff;color:#002D72;font-size:11px;font-weight:800;padding:7px 14px;border-radius:4px 4px 0 0;cursor:pointer;letter-spacing:.3px;}
+.tab-btn.active{background:#002D72;color:#00FFFF;border-color:#002D72;}.tab-btn:hover{opacity:.88;}
+.body{padding:14px 16px;}.sec-lbl{background:#002D72;color:#00FFFF;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 12px;display:inline-block;margin-bottom:10px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}.kpi{background:#F4F7FC;border-left:3px solid #002D72;border-radius:3px;padding:10px 12px;}.kpi.cy{border-left-color:#00AAAA;}
+.kl{font-size:10px;color:#666;font-weight:700;letter-spacing:.4px;margin-bottom:4px;}.kv{font-size:20px;font-weight:700;color:#002D72;line-height:1.1;}.kv.cy{color:#007A7A;}.ks{font-size:10px;color:#999;margin-top:2px;}
+.row2{display:grid;grid-template-columns:1.1fr 1fr;gap:10px;margin-bottom:12px;}.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.panel{background:#fff;border:1px solid #D8E2F0;border-radius:3px;overflow:hidden;}.ph{background:#002D72;color:#fff;font-size:11px;font-weight:700;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;}.ph span{color:#00FFFF;font-size:9px;font-weight:400;}.pb{padding:12px;}
+.seg-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;}.sc{background:#002D72;color:#fff;}.sv{background:#00CCCC;color:#002D72;}.sl{background:#7FA8D4;color:#fff;}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}.tbl th{background:#002D72;color:#fff;font-size:10px;font-weight:700;padding:6px 8px;text-align:left;cursor:pointer;user-select:none;}.tbl th:hover{background:#003a94;}.tbl th .sort-icon{margin-left:4px;opacity:.5;font-size:9px;}.tbl th.sort-asc .sort-icon::after{content:'▲';}.tbl th.sort-desc .sort-icon::after{content:'▼';}.tbl th:not(.sort-asc):not(.sort-desc) .sort-icon::after{content:'⇅';}
+.tbl td{padding:5px 8px;border-bottom:.5px solid #EEF2F8;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.tbl tr:nth-child(even) td{background:#F8FAFD;}.tbl tr:hover td{background:#EEF5FF;}
+.footer{background:#002D72;color:#aac8f0;font-size:10px;padding:6px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}.footer span{color:#00FFFF;}.loading{text-align:center;padding:30px;color:#002D72;font-size:13px;font-weight:600;}.error-box{background:#FFF0F0;border:1px solid #FFB3B3;border-radius:4px;padding:12px;font-size:12px;color:#8B0000;margin:8px 0;}
+.seg-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:.5px solid #EEF2F8;}.sn{font-size:18px;font-weight:700;color:#002D72;min-width:55px;}.si{flex:1;}.sname{font-size:11px;font-weight:700;color:#333;}.spct{font-size:10px;color:#888;}.srar{font-size:11px;font-weight:700;color:#B05000;text-align:right;min-width:60px;}
+.filter-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:8px 12px;background:#F4F7FC;border-bottom:1px solid #D8E2F0;}.seg-filters{display:flex;gap:6px;align-items:center;}.seg-filters label,.search-box label{font-size:10px;font-weight:700;color:#666;letter-spacing:.4px;}.filter-btn{border:none;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;background:#E8EDF5;color:#002D72;}.filter-btn.active{background:#002D72;color:#fff;}.filter-btn.vuln.active{background:#00AAAA;color:#002D72;}.filter-btn.leal.active{background:#7FA8D4;color:#fff;}.search-box{display:flex;align-items:center;gap:6px;}.search-input{border:1px solid #C8D4E8;border-radius:3px;padding:4px 8px;font-size:11px;color:#333;width:200px;outline:none;}
+.pager{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#F8FAFD;border-top:1px solid #EEF2F8;font-size:11px;color:#666;}.pager-btns{display:flex;gap:4px;align-items:center;}.pg-btn{border:1px solid #C8D4E8;background:#fff;color:#002D72;font-size:11px;font-weight:700;padding:3px 9px;border-radius:3px;cursor:pointer;}.pg-btn:hover,.pg-btn.active{background:#002D72;color:#fff;border-color:#002D72;}.pg-btn:disabled{opacity:.35;cursor:not-allowed;}.pg-select{border:1px solid #C8D4E8;border-radius:3px;padding:3px 6px;font-size:11px;color:#333;background:#fff;cursor:pointer;}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}.delta-up{color:#B72B2B;font-weight:800;}.delta-down{color:#1B7A3E;font-weight:800;}.note{font-size:11px;color:#666;background:#F8FAFD;border-left:3px solid #00AAAA;padding:8px 10px;margin-bottom:12px;}
+
+body.dark-mode{background:#0F172A;color:#E2E8F0;}
+body.dark-mode .db{background:#0F172A;color:#E2E8F0;}
+body.dark-mode .panel,
+body.dark-mode .kpi,
+body.dark-mode .filter-bar,
+body.dark-mode .pager,
+body.dark-mode .tbl tr:nth-child(even) td{background:#1E293B !important;color:#E2E8F0;}
+body.dark-mode .tbl td,
+body.dark-mode .sname,
+body.dark-mode .sn,
+body.dark-mode .kv,
+body.dark-mode .kl{color:#E2E8F0 !important;}
+body.dark-mode .tabs{background:#111827;border-color:#334155;}
+body.dark-mode .tab-btn{background:#1E293B;color:#E2E8F0;border-color:#334155;}
+body.dark-mode .tab-btn.active{background:#00AAAA;color:#001B2E;}
+body.dark-mode .search-input,
+body.dark-mode .pg-select{background:#111827;color:#E2E8F0;border-color:#475569;}
+
+
+.export-select{
+  background:#fff;
+  border:1px solid #7FA8D4;
+  color:#002D72;
+  font-size:11px;
+  font-weight:700;
+  padding:4px 8px;
+  border-radius:3px;
+  cursor:pointer;
+}
+.dark-mode .export-select{
+  background:#0B1F3A;
+  color:#EAF3FF;
+  border-color:#7FA8D4;
+}
+@media print{
+  body *{visibility:hidden !important;}
+  .db, .db *{visibility:visible !important;}
+  .db{position:absolute !important;left:0 !important;top:0 !important;width:100% !important;}
+  .topbar button,.topbar select{display:none !important;}
+}
+
 </style>
 
 <div class="db">
 <div class="topbar">
-  <div>
-    <div class="t-title">Sistema Predictivo de Detección de Churn — Grupo 4</div>
-    <div class="t-sub">UNITEC · Datos en tiempo real desde Google Sheets · HistGradientBoosting</div>
-  </div>
-  <div class="t-right">
-    <span class="badge">AUC-ROC: 0.9741</span>
-    <span class="status-dot"></span>
-    <span class="status-lbl" id="status-lbl">Conectando...</span>
-    <button class="refresh-btn" onclick="loadData()">&#8635; Actualizar</button>
-    <button class="export-btn" onclick="exportCSV()">&#8595; Exportar</button>
-    <button class="dark-btn" id="dark-toggle" onclick="toggleDark()" title="Modo oscuro">&#9790;</button>
-  </div>
+  <div><div class="t-title">Sistema Predictivo de Detección de Churn — Grupo 4</div><div class="t-sub">UNITEC · Entrenamiento vs Blind Test · Google Sheets · HistGradientBoosting</div></div>
+  <div class="t-right"><span class="badge">AUC-ROC: 0.9741</span><span class="status-dot"></span><span class="status-lbl" id="status-lbl">Conectando...</span><button class="refresh-btn" onclick="loadData()">&#8635; Actualizar</button>
+<select id="export-format" class="export-select" title="Formato de exportación">
+  <option value="csv">CSV</option>
+  <option value="png">PNG</option>
+  <option value="pdf">PDF</option>
+</select>
+<button class="export-btn" type="button" onclick="exportView()">&#8595; Exportar vista</button>
+<button class="dark-btn" onclick="toggleDark()" title="Modo oscuro">&#9790;</button></div>
 </div>
-
-<div class="body">
-
-<div id="main-content">
-  <div class="loading" id="loading-msg">
-    <i class="ti ti-loader" aria-hidden="true"></i> Cargando datos desde Churn_Grupo4_Dashboard...
-  </div>
-</div>
-
-</div>
-
-<div class="footer">
-  <div>Proyecto Grupo 4 · UNITEC · <span id="footer-ts">—</span></div>
-  <div>Fuente: <span>Churn_Grupo4_Dashboard</span> · Google Sheets · CSV público</div>
-  <div>Sheet ID: <span>1EmptBURotqtpLhtHWOIyz98NKvWDuOWGzyuduOr86AI</span></div>
-</div>
+<div class="tabs"><button class="tab-btn active" id="tab-entrenamiento" onclick="setView('entrenamiento')">ENTRENAMIENTO</button><button class="tab-btn" id="tab-blind" onclick="setView('blind')">BLIND TEST</button><button class="tab-btn" id="tab-comparacion" onclick="setView('comparacion')">COMPARACIÓN</button></div>
+<div class="body"><div id="main-content"><div class="loading">Cargando datos desde Google Sheets...</div></div></div>
+<div class="footer"><div>Proyecto Grupo 4 · UNITEC · <span id="footer-ts">—</span></div><div>Fuentes: <span>Churn_Grupo4_Dashboard</span> + <span>Churn_Grupo4_BlindTest</span></div><div>Entrenamiento: <span>1Empt...86AI</span> · Blind: <span>1tNN...Mr-8</span></div></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const SHEET_ID = '1EmptBURotqtpLhtHWOIyz98NKvWDuOWGzyuduOr86AI';
-let allRows = [];
-let charts  = {};
+const TRAIN_SHEET_ID = '1EmptBURotqtpLhtHWOIyz98NKvWDuOWGzyuduOr86AI';
+const BLIND_SHEET_ID = '1tNNLotoL0HobOcttbfCxWqN40Cj3EQZ25ZUu8XNMr-8';
+const TRAIN_SHEET_NAME = 'Prescripcion_Individual';
+const BLIND_SHEET_NAME = ''; // primera pestaña de Churn_Grupo4_BlindTest
+let datasets = {entrenamiento:[], blind:[]};
+let currentView = 'entrenamiento';
+let charts = {};
+let tbl = { filter:'Todos', search:'', sortCol:'RaR_Cliente', sortDir:'desc', page:1, pageSize:10 };
 
-// ── Estado de la tabla ──
-let tbl = {
-  filter:   'Todos',
-  search:   '',
-  sortCol:  'RaR_Cliente',
-  sortDir:  'desc',
-  page:     1,
-  pageSize: 10,
-};
+function fmt$(v){ return '$' + Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtN(v){ return Number(v||0).toLocaleString('en-US'); }
+function fmtP(v){ return (Number(v||0)*100).toFixed(1)+'%'; }
+function fmtPd(v){ return Number(v||0).toFixed(4); }
+function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function activeRows(){ return currentView==='blind' ? datasets.blind : datasets.entrenamiento; }
+function csvUrl(id, sheet){ return sheet ? `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}` : `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`; }
 
-function fmt$(v){ return '$' + Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmtN(v){ return Number(v).toLocaleString('en-US'); }
-function fmtP(v){ return (Number(v)*100).toFixed(1)+'%'; }
-function fmtPd(v){ return Number(v).toFixed(4); }
-
-// ── Acciones por segmento alineadas con Fase VII ──
-function actionMap(seg, p){
-  if(seg === 'Riesgo Crítico' || seg === 'Riesgo Critico'){
-    if(p >= 0.85) return 'Llamada ejecutiva 48h';
-    if(p >= 0.50) return 'Descuento exclusivo 15-20%';
-    return 'Monitoreo intensivo';
+function parseCSV(text){
+  const rows=[]; let row=[], val='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], n=text[i+1];
+    if(c==='"' && q && n==='"'){val+='"'; i++;}
+    else if(c==='"'){q=!q;}
+    else if(c===',' && !q){row.push(val); val='';}
+    else if((c==='\n'||c==='\r') && !q){ if(c==='\r'&&n==='\n') i++; row.push(val); if(row.some(x=>x!=='')) rows.push(row); row=[]; val='';}
+    else val+=c;
   }
-  if(seg === 'Vulnerable'){
-    if(p >= 0.07) return 'Campaña digital + upgrade';
-    return 'Encuesta de satisfacción';
-  }
-  return 'Programa de lealtad';
+  if(val!=='' || row.length){row.push(val); rows.push(row);}
+  return rows;
 }
-
+async function fetchSheet(id, sheet){
+  const res = await fetch(csvUrl(id, sheet));
+  if(!res.ok) throw new Error(`No se pudo leer Google Sheet ${id}`);
+  const parsed = parseCSV(await res.text());
+  const headers = parsed[0].map(h=>h.trim());
+  return parsed.slice(1).map(r=>{let o={}; headers.forEach((h,i)=>o[h]=(r[i]??'').trim()); return o;});
+}
 async function loadData(){
   document.getElementById('status-lbl').textContent = 'Actualizando...';
-  loadPublicCSV();
+  document.getElementById('main-content').innerHTML = '<div class="loading">Cargando entrenamiento y blind test...</div>';
+  try{
+    const [train, blind] = await Promise.all([fetchSheet(TRAIN_SHEET_ID, TRAIN_SHEET_NAME), fetchSheet(BLIND_SHEET_ID, BLIND_SHEET_NAME)]);
+    datasets.entrenamiento = train; datasets.blind = blind;
+    document.getElementById('footer-ts').textContent = 'Actualizado: ' + new Date().toLocaleString('es-HN');
+    document.getElementById('status-lbl').textContent = `En línea · Train ${fmtN(train.length)} · Blind ${fmtN(blind.length)}`;
+    render();
+  }catch(e){ showError(e.message); }
 }
-
-async function loadPublicCSV(){
-  const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Prescripcion_Individual`;
-  try {
-    const res  = await fetch(exportUrl);
-    if(!res.ok) throw new Error('CSV fetch failed');
-    const text = await res.text();
-    const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
-    allRows = lines.slice(1).map(line => {
-      const vals = line.split(',').map(v => v.replace(/"/g,'').trim());
-      let obj = {};
-      headers.forEach((h,i) => obj[h] = vals[i] || '');
-      return obj;
-    });
-    renderDashboard();
-  } catch(e){
-    showError(e.message);
-  }
-}
-
-function showError(msg){
-  document.getElementById('status-lbl').textContent = 'Error de conexión';
-  document.getElementById('main-content').innerHTML = `
-    <div class="error-box">
-      <strong>No se pudo conectar con Google Sheets.</strong><br>
-      Asegúrate de que la Sheet <em>Churn_Grupo4_Dashboard</em> tiene permisos de lectura pública (cualquiera con el enlace).<br>
-      Desde tu notebook ejecuta: <code>sh.share(None, perm_type='anyone', role='reader')</code><br><br>
-      Detalle técnico: ${msg}
-    </div>`;
-}
+function showError(msg){ document.getElementById('status-lbl').textContent='Error de conexión'; document.getElementById('main-content').innerHTML=`<div class="error-box"><strong>No se pudo conectar con Google Sheets.</strong><br>Verifica que ambas Sheets tengan permiso público de lectura.<br><br>Detalle técnico: ${escapeHtml(msg)}</div>`; }
+function setView(v){ currentView=v; tbl.page=1; tbl.filter='Todos'; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById('tab-'+v).classList.add('active'); render(); }
 
 function computeKPIs(rows){
-  const n     = rows.length;
-  const rar   = rows.reduce((a,r) => a + (parseFloat(r['RaR_Cliente'])||0), 0);
-  const ltv   = rows.reduce((a,r) => a + (parseFloat(r['LTV_VPN'])||0), 0);
-  const pChurnVals = rows.map(r => parseFloat(r['P_Churn'])||0);
-  const pMean = pChurnVals.reduce((a,v)=>a+v,0)/n;
-  const segs = {critico:0, vulnerable:0, leal:0};
-  const segRar = {critico:0, vulnerable:0, leal:0};
-  const segLtv = {critico:0, vulnerable:0, leal:0};
-  rows.forEach(r => {
-    const seg = (r['Segmento']||'').trim();
-    const rar_c = parseFloat(r['RaR_Cliente'])||0;
-    const ltv_c = parseFloat(r['LTV_VPN'])||0;
-    if(seg === 'Riesgo Crítico' || seg === 'Riesgo Critico'){ segs.critico++; segRar.critico+=rar_c; segLtv.critico+=ltv_c; }
-    else if(seg === 'Vulnerable'){ segs.vulnerable++; segRar.vulnerable+=rar_c; segLtv.vulnerable+=ltv_c; }
-    else { segs.leal++; segRar.leal+=rar_c; segLtv.leal+=ltv_c; }
-  });
-  let churnRealPct = null;
-  if(rows[0] && rows[0]['Churn_Real'] !== undefined){
-    const sum = rows.reduce((a,r)=>a+(parseInt(r['Churn_Real'])||0),0);
-    churnRealPct = sum/n;
-  }
-  return {n, rar, ltv, pMean, segs, segRar, segLtv, churnRealPct, pChurnVals};
+  const n=rows.length||1, rar=rows.reduce((a,r)=>a+(parseFloat(r['RaR_Cliente'])||0),0), ltv=rows.reduce((a,r)=>a+(parseFloat(r['LTV_VPN'])||0),0);
+  const pChurnVals=rows.map(r=>parseFloat(r['P_Churn'])||0), pMean=pChurnVals.reduce((a,v)=>a+v,0)/n;
+  const segs={critico:0,vulnerable:0,leal:0}, segRar={critico:0,vulnerable:0,leal:0}, segLtv={critico:0,vulnerable:0,leal:0};
+  rows.forEach(r=>{const seg=(r['Segmento']||'').trim(); const rc=parseFloat(r['RaR_Cliente'])||0, lc=parseFloat(r['LTV_VPN'])||0; if(seg==='Riesgo Crítico'||seg==='Riesgo Critico'){segs.critico++;segRar.critico+=rc;segLtv.critico+=lc;} else if(seg==='Vulnerable'){segs.vulnerable++;segRar.vulnerable+=rc;segLtv.vulnerable+=lc;} else {segs.leal++;segRar.leal+=rc;segLtv.leal+=lc;}});
+  let churnRealPct=null; if(rows[0] && rows[0]['Churn_Real']!==undefined){churnRealPct=rows.reduce((a,r)=>a+(parseInt(r['Churn_Real'])||0),0)/n;}
+  return {n,rar,ltv,pMean,segs,segRar,segLtv,churnRealPct,pChurnVals};
+}
+function actionMap(seg,p){ if(seg==='Riesgo Crítico'||seg==='Riesgo Critico'){ if(p>=0.85)return 'Llamada ejecutiva 48h'; if(p>=0.50)return 'Descuento exclusivo 15-20%'; return 'Monitoreo intensivo'; } if(seg==='Vulnerable') return p>=0.07?'Campaña digital + upgrade':'Encuesta de satisfacción'; return 'Programa de lealtad'; }
+function render(){ if(currentView==='comparacion') renderComparison(); else renderDashboard(activeRows(), currentView==='blind'?'BLIND TEST — SCORING SIN TARGET':'ENTRENAMIENTO — RESULTADOS DEL MODELO'); }
+
+function renderDashboard(rows, title){
+  const kp=computeKPIs(rows); const churnDisplay=kp.churnRealPct!==null?fmtP(kp.churnRealPct):fmtP(kp.pMean)+' *'; const churnSub=kp.churnRealPct!==null?'Tasa real observada':'* Prob. media (sin target)';
+  document.getElementById('main-content').innerHTML=`
+  <div class="sec-lbl">${title}</div>
+  <div class="kpi-grid"><div class="kpi"><div class="kl">CLIENTES EVALUADOS</div><div class="kv">${fmtN(kp.n)}</div><div class="ks">Dataset activo</div></div><div class="kpi"><div class="kl">CHURN RATE</div><div class="kv">${churnDisplay}</div><div class="ks">${churnSub}</div></div><div class="kpi cy"><div class="kl">REVENUE AT RISK</div><div class="kv cy">${fmt$(kp.rar)}</div><div class="ks">Mensual · cartera completa</div></div><div class="kpi"><div class="kl">LTV TOTAL (VPN)</div><div class="kv">${fmt$(kp.ltv)}</div><div class="ks">Margen 35% · 4 años · 12%</div></div><div class="kpi cy"><div class="kl">P_CHURN MEDIA</div><div class="kv cy">${kp.pMean.toFixed(4)}</div><div class="ks">Modo scoring</div></div></div>
+  <div class="sec-lbl">SEGMENTACIÓN PRESCRIPTIVA</div><div class="row2"><div class="panel"><div class="ph">Distribución por Segmento <span>${fmtN(kp.n)} registros</span></div><div class="pb">${segmentHtml(kp)}</div></div><div class="panel"><div class="ph">Distribución de P_Churn <span>Histograma · 20 bins</span></div><div class="pb"><div style="position:relative;width:100%;height:160px;"><canvas id="hist-chart"></canvas></div></div></div></div>
+  ${tableHtml()}
+  <div class="sec-lbl">ANÁLISIS FINANCIERO — RaR Y LTV POR SEGMENTO</div><div class="row3"><div class="panel"><div class="ph">Revenue at Risk por Segmento <span>Barras horizontales</span></div><div class="pb"><div style="position:relative;width:100%;height:120px;"><canvas id="rar-chart"></canvas></div></div></div><div class="panel"><div class="ph">LTV Promedio por Segmento <span>Valor presente neto</span></div><div class="pb"><div style="position:relative;width:100%;height:120px;"><canvas id="ltv-chart"></canvas></div></div></div></div>`;
+  buildHistogram(kp.pChurnVals); buildRaRChart(kp); buildLTVChart(kp); buildTopTable();
+}
+function segmentHtml(kp){return `<div class="seg-row"><div class="sn">${fmtN(kp.segs.critico)}</div><div class="si"><div class="sname"><span class="seg-pill sc">Riesgo Crítico</span></div><div class="spct">${fmtP(kp.segs.critico/kp.n)} de cartera</div></div><div class="srar">${fmt$(kp.segRar.critico)}</div></div><div class="seg-row"><div class="sn">${fmtN(kp.segs.vulnerable)}</div><div class="si"><div class="sname"><span class="seg-pill sv">Vulnerable</span></div><div class="spct">${fmtP(kp.segs.vulnerable/kp.n)} de cartera</div></div><div class="srar">${fmt$(kp.segRar.vulnerable)}</div></div><div class="seg-row" style="border-bottom:none;margin-bottom:0;padding-bottom:0;"><div class="sn">${fmtN(kp.segs.leal)}</div><div class="si"><div class="sname"><span class="seg-pill sl">Leal</span></div><div class="spct">${fmtP(kp.segs.leal/kp.n)} de cartera</div></div><div class="srar">${fmt$(kp.segRar.leal)}</div></div><div style="margin-top:12px;border-top:.5px solid #EEF2F8;padding-top:8px;display:flex;gap:16px;flex-wrap:wrap;"><div><div style="font-size:10px;color:#888;">LTV Riesgo Crítico</div><div style="font-size:13px;font-weight:700;color:#002D72;">${fmt$(kp.segLtv.critico)}</div></div><div><div style="font-size:10px;color:#888;">LTV Vulnerable</div><div style="font-size:13px;font-weight:700;color:#007A7A;">${fmt$(kp.segLtv.vulnerable)}</div></div><div><div style="font-size:10px;color:#888;">LTV Leal</div><div style="font-size:13px;font-weight:700;color:#7FA8D4;">${fmt$(kp.segLtv.leal)}</div></div></div>`;}
+function tableHtml(){return `<div class="sec-lbl" id="presc-lbl">PRESCRIPCIÓN INDIVIDUAL — TODOS LOS SEGMENTOS</div><div class="panel" style="margin-bottom:12px;"><div class="ph">Clientes con Mayor Revenue at Risk <span id="table-subtitle">Columnas ordenables · Paginación dinámica</span></div><div class="filter-bar"><div class="seg-filters"><label>SEGMENTO</label><button class="filter-btn all active" onclick="setFilter('Todos')">Todos</button><button class="filter-btn crit" onclick="setFilter('Crítico')">● Crítico</button><button class="filter-btn vuln" onclick="setFilter('Vulnerable')">● Vulnerable</button><button class="filter-btn leal" onclick="setFilter('Leal')">● Leal</button></div><div class="search-box"><label>BUSCAR</label><input class="search-input" id="tbl-search" type="text" placeholder="CustomerID o Acción..." oninput="onSearch()"></div></div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="width:105px;" onclick="sortTable('CustomerID')">CustomerID <span class="sort-icon"></span></th><th style="width:75px;" onclick="sortTable('P_Churn')">P_Churn <span class="sort-icon"></span></th><th style="width:105px;">Segmento</th><th style="width:100px;" onclick="sortTable('Gasto_Mensual')">Gasto Mensual <span class="sort-icon"></span></th><th style="width:100px;" onclick="sortTable('RaR_Cliente')">RaR Cliente <span class="sort-icon"></span></th><th style="width:100px;" onclick="sortTable('LTV_VPN')">LTV (VPN) <span class="sort-icon"></span></th><th style="width:160px;">Acción Recomendada</th></tr></thead><tbody id="top-table-body"></tbody></table></div><div class="pager"><div id="pager-info">—</div><div class="pager-btns" id="pager-btns"></div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:10px;color:#888;">Filas</span><select class="pg-select" id="rows-per-page" onchange="setPageSize()"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></div></div></div>`;}
+
+function getFilteredRows(){return activeRows().filter(r=>{const seg=(r['Segmento']||'').trim(); const match=tbl.filter==='Todos'?true:tbl.filter==='Crítico'?(seg==='Riesgo Crítico'||seg==='Riesgo Critico'):tbl.filter==='Vulnerable'?seg==='Vulnerable':(seg!=='Riesgo Crítico'&&seg!=='Riesgo Critico'&&seg!=='Vulnerable'); if(!match)return false; if(!tbl.search)return true; const q=tbl.search.toLowerCase(); return (r['CustomerID']||'').toLowerCase().includes(q)||actionMap(seg,parseFloat(r['P_Churn'])||0).toLowerCase().includes(q);});}
+function getSortedRows(rows){const col=tbl.sortCol,dir=tbl.sortDir==='asc'?1:-1; return [...rows].sort((a,b)=>{let av=parseFloat(a[col]),bv=parseFloat(b[col]); if(isNaN(av))av=a[col]||''; if(isNaN(bv))bv=b[col]||''; return av<bv?-1*dir:av>bv?1*dir:0;});}
+function setFilter(f){tbl.filter=f;tbl.page=1;document.querySelectorAll('.filter-btn').forEach(btn=>btn.classList.remove('active')); const map={'Todos':'.all','Crítico':'.crit','Vulnerable':'.vuln','Leal':'.leal'}; const el=document.querySelector('.filter-btn'+map[f]); if(el)el.classList.add('active'); buildTopTable();}
+function onSearch(){const inp=document.getElementById('tbl-search'); tbl.search=inp?inp.value:''; tbl.page=1; buildTopTable();}
+function sortTable(col){if(tbl.sortCol===col)tbl.sortDir=tbl.sortDir==='asc'?'desc':'asc'; else {tbl.sortCol=col; tbl.sortDir='desc';} tbl.page=1; buildTopTable();}
+function setPageSize(){tbl.pageSize=parseInt(document.getElementById('rows-per-page').value)||10; tbl.page=1; buildTopTable();}
+function goPage(p){tbl.page=p; buildTopTable();}
+function buildTopTable(){const filtered=getFilteredRows(), sorted=getSortedRows(filtered), total=sorted.length, pages=Math.max(1,Math.ceil(total/tbl.pageSize)); if(tbl.page>pages)tbl.page=pages; if(tbl.page<1)tbl.page=1; const start=(tbl.page-1)*tbl.pageSize, slice=sorted.slice(start,start+tbl.pageSize), body=document.getElementById('top-table-body'); if(!body)return; body.innerHTML=slice.length?slice.map(r=>{const p=parseFloat(r['P_Churn'])||0, seg=(r['Segmento']||'').trim(), isCrit=seg==='Riesgo Crítico'||seg==='Riesgo Critico'; const pill=isCrit?'<span class="seg-pill sc">Crítico</span>':seg==='Vulnerable'?'<span class="seg-pill sv">Vulnerable</span>':'<span class="seg-pill sl">Leal</span>'; const accion=actionMap(seg,p); return `<tr><td title="${escapeHtml(r['CustomerID']||'')}">${escapeHtml(r['CustomerID']||'—')}</td><td style="font-weight:700;color:${p>=0.70?'#B72B2B':p>=0.10?'#B05000':p>=0.04?'#7A6000':'#1B7A3E'};">${fmtPd(p)}</td><td>${pill}</td><td>${fmt$(parseFloat(r['Gasto_Mensual'])||0)}</td><td style="font-weight:700;color:#B05000;">${fmt$(parseFloat(r['RaR_Cliente'])||0)}</td><td>${fmt$(parseFloat(r['LTV_VPN'])||0)}</td><td style="font-size:10px;color:#555;" title="${escapeHtml(accion)}">${escapeHtml(accion)}</td></tr>`;}).join(''):`<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;font-style:italic;">Sin resultados.</td></tr>`; document.getElementById('pager-info').textContent=total>0?`${start+1}–${Math.min(start+tbl.pageSize,total)} de ${fmtN(total)} filas`:'0 filas'; let html=`<button class="pg-btn" onclick="goPage(${tbl.page-1})" ${tbl.page<=1?'disabled':''}>‹ Ant.</button>`; for(let i=1;i<=pages;i++){if(i===1||i===pages||(i>=tbl.page-2&&i<=tbl.page+2))html+=`<button class="pg-btn${i===tbl.page?' active':''}" onclick="goPage(${i})">${i}</button>`; else if(i===tbl.page-3||i===tbl.page+3)html+=`<span style="padding:0 3px;color:#aaa;font-size:11px;">…</span>`;} html+=`<button class="pg-btn" onclick="goPage(${tbl.page+1})" ${tbl.page>=pages?'disabled':''}>Sig. ›</button>`; document.getElementById('pager-btns').innerHTML=html; const sub=document.getElementById('table-subtitle'); if(sub)sub.textContent=`${fmtN(total)} registros · ordenado por ${tbl.sortCol} ${tbl.sortDir}`;}
+function exportCSV(){const rows=getSortedRows(getFilteredRows()), cols=['CustomerID','P_Churn','Segmento','Gasto_Mensual','RaR_Cliente','LTV_VPN']; const body=rows.map(r=>cols.map(c=>'"'+String(r[c]||'').replace(/"/g,'""')+'"').join(',')).join('\n'); const blob=new Blob([cols.join(',')+'\n'+body],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`churn_${currentView}_${tbl.filter}.csv`; a.click(); URL.revokeObjectURL(url);}
+
+async function exportPNG(){
+  const activeTab = document.querySelector('.tab-content.active') || document.getElementById('main-content');
+  const canvas = await html2canvas(activeTab,{scale:2,backgroundColor:null});
+  const link = document.createElement('a');
+  link.download = 'dashboard_tab.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 }
 
-// ── Filtrar ──
-function getFilteredRows(){
-  return allRows.filter(r => {
-    const seg = (r['Segmento']||'').trim();
-    const matchSeg =
-      tbl.filter === 'Todos'      ? true :
-      tbl.filter === 'Crítico'    ? (seg==='Riesgo Crítico'||seg==='Riesgo Critico') :
-      tbl.filter === 'Vulnerable' ? (seg==='Vulnerable') :
-      (seg !== 'Riesgo Crítico' && seg !== 'Riesgo Critico' && seg !== 'Vulnerable');
-    if(!matchSeg) return false;
-    if(!tbl.search) return true;
-    const q = tbl.search.toLowerCase();
-    return (r['CustomerID']||'').toLowerCase().includes(q) ||
-           actionMap(seg, parseFloat(r['P_Churn'])||0).toLowerCase().includes(q);
-  });
+async function exportPDF(){
+  const activeTab = document.querySelector('.tab-content.active') || document.getElementById('main-content');
+  const canvas = await html2canvas(activeTab,{scale:2,backgroundColor:'#ffffff'});
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('l','mm','a4');
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  pdf.addImage(imgData,'PNG',0,0,pdfWidth,pdfHeight);
+  pdf.save('dashboard_tab.pdf');
 }
 
-// ── Ordenar ──
-function getSortedRows(rows){
-  const col = tbl.sortCol;
-  const dir = tbl.sortDir === 'asc' ? 1 : -1;
-  return [...rows].sort((a,b) => {
-    let av = parseFloat(a[col]);
-    let bv = parseFloat(b[col]);
-    if(isNaN(av)) av = a[col]||'';
-    if(isNaN(bv)) bv = b[col]||'';
-    if(av < bv) return -1*dir;
-    if(av > bv) return  1*dir;
-    return 0;
-  });
+function toggleDark(){document.body.classList.toggle('dark-mode');}
+
+function renderComparison(){
+  const tr=computeKPIs(datasets.entrenamiento), bl=computeKPIs(datasets.blind); const delta=(b,a)=>a?((b-a)/a):0; const cls=v=>v>=0?'delta-up':'delta-down';
+  document.getElementById('main-content').innerHTML=`<div class="sec-lbl">COMPARACIÓN — ENTRENAMIENTO VS BLIND TEST</div><div class="note"><strong>Lectura:</strong> el Blind Test no tiene target real; por eso se compara por señales de scoring: P_Churn media, distribución por segmento, Revenue at Risk y LTV. No se calculan Accuracy, Recall, Precision ni AUC para el Blind Test.</div><div class="panel" style="margin-bottom:12px;"><div class="ph">KPIs Comparativos <span>variación relativa del Blind Test vs Entrenamiento</span></div><div class="pb"><table class="tbl"><thead><tr><th>Métrica</th><th>Entrenamiento</th><th>Blind Test</th><th>Δ Relativo</th></tr></thead><tbody><tr><td>Clientes evaluados</td><td>${fmtN(tr.n)}</td><td>${fmtN(bl.n)}</td><td class="${cls(bl.n-tr.n)}">${fmtP(delta(bl.n,tr.n))}</td></tr><tr><td>P_Churn media</td><td>${tr.pMean.toFixed(4)}</td><td>${bl.pMean.toFixed(4)}</td><td class="${cls(bl.pMean-tr.pMean)}">${fmtP(delta(bl.pMean,tr.pMean))}</td></tr><tr><td>Revenue at Risk mensual</td><td>${fmt$(tr.rar)}</td><td>${fmt$(bl.rar)}</td><td class="${cls(bl.rar-tr.rar)}">${fmtP(delta(bl.rar,tr.rar))}</td></tr><tr><td>LTV total</td><td>${fmt$(tr.ltv)}</td><td>${fmt$(bl.ltv)}</td><td class="${cls(bl.ltv-tr.ltv)}">${fmtP(delta(bl.ltv,tr.ltv))}</td></tr><tr><td>% Riesgo Crítico</td><td>${fmtP(tr.segs.critico/tr.n)}</td><td>${fmtP(bl.segs.critico/bl.n)}</td><td class="${cls((bl.segs.critico/bl.n)-(tr.segs.critico/tr.n))}">${fmtP(delta(bl.segs.critico/bl.n,tr.segs.critico/tr.n))}</td></tr><tr><td>% Vulnerable</td><td>${fmtP(tr.segs.vulnerable/tr.n)}</td><td>${fmtP(bl.segs.vulnerable/bl.n)}</td><td class="${cls((bl.segs.vulnerable/bl.n)-(tr.segs.vulnerable/tr.n))}">${fmtP(delta(bl.segs.vulnerable/bl.n,tr.segs.vulnerable/tr.n))}</td></tr><tr><td>% Leal</td><td>${fmtP(tr.segs.leal/tr.n)}</td><td>${fmtP(bl.segs.leal/bl.n)}</td><td class="${cls((bl.segs.leal/bl.n)-(tr.segs.leal/tr.n))}">${fmtP(delta(bl.segs.leal/bl.n,tr.segs.leal/tr.n))}</td></tr></tbody></table></div></div><div class="compare-grid"><div class="panel"><div class="ph">Segmentos — Entrenamiento vs Blind <span>% de cartera</span></div><div class="pb"><div style="position:relative;height:220px;"><canvas id="cmp-seg-chart"></canvas></div></div></div><div class="panel"><div class="ph">RaR por Segmento — Entrenamiento vs Blind <span>USD mensual</span></div><div class="pb"><div style="position:relative;height:220px;"><canvas id="cmp-rar-chart"></canvas></div></div></div></div><div class="compare-grid"><div class="panel"><div class="ph">Distribución P_Churn — Entrenamiento <span>20 bins</span></div><div class="pb"><div style="position:relative;height:170px;"><canvas id="hist-train"></canvas></div></div></div><div class="panel"><div class="ph">Distribución P_Churn — Blind Test <span>20 bins</span></div><div class="pb"><div style="position:relative;height:170px;"><canvas id="hist-blind"></canvas></div></div></div></div>`;
+  buildCompareCharts(tr,bl); buildMiniHist('hist-train',tr.pChurnVals); buildMiniHist('hist-blind',bl.pChurnVals);
 }
+function buildHistogram(vals){buildMiniHist('hist-chart',vals);}
+function buildMiniHist(id,vals){const bins=20, counts=new Array(bins).fill(0); vals.forEach(v=>{const b=Math.min(Math.floor(v*bins),bins-1); counts[b]++;}); const labels=Array.from({length:bins},(_,i)=>(i/bins).toFixed(2)); const colors=counts.map((_,i)=>{const mid=(i+.5)/bins; return mid<0.0412?'#7FA8D4':mid<0.10?'#00AAAA':'#002D72';}); if(charts[id])charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data:counts,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:6,font:{size:10},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:10},color:'#888'}}}}});}
+function buildRaRChart(kp){if(charts.rar)charts.rar.destroy(); charts.rar=new Chart(document.getElementById('rar-chart'),{type:'bar',data:{labels:['Riesgo Crítico','Vulnerable','Leal'],datasets:[{data:[kp.segRar.critico,kp.segRar.vulnerable,kp.segRar.leal],backgroundColor:['#002D72','#00AAAA','#7FA8D4'],borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt$(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{callback:v=>'$'+Math.round(v/1000)+'K',font:{size:10},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:10,weight:'bold'},color:'#333'}}}}});}
+function buildLTVChart(kp){const m={critico:kp.segs.critico?kp.segLtv.critico/kp.segs.critico:0,vulnerable:kp.segs.vulnerable?kp.segLtv.vulnerable/kp.segs.vulnerable:0,leal:kp.segs.leal?kp.segLtv.leal/kp.segs.leal:0}; if(charts.ltv)charts.ltv.destroy(); charts.ltv=new Chart(document.getElementById('ltv-chart'),{type:'bar',data:{labels:['Riesgo Crítico','Vulnerable','Leal'],datasets:[{data:[m.critico,m.vulnerable,m.leal],backgroundColor:['#002D72','#00AAAA','#7FA8D4'],borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt$(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{callback:v=>'$'+Math.round(v),font:{size:10},color:'#888'}},y:{grid:{display:false},ticks:{font:{size:10},color:'#333'}}}}});}
+function buildCompareCharts(tr,bl){if(charts.cmpSeg)charts.cmpSeg.destroy(); charts.cmpSeg=new Chart(document.getElementById('cmp-seg-chart'),{type:'bar',data:{labels:['Riesgo Crítico','Vulnerable','Leal'],datasets:[{label:'Entrenamiento',data:[tr.segs.critico/tr.n,tr.segs.vulnerable/tr.n,tr.segs.leal/tr.n],backgroundColor:'#7FA8D4'},{label:'Blind Test',data:[bl.segs.critico/bl.n,bl.segs.vulnerable/bl.n,bl.segs.leal/bl.n],backgroundColor:'#002D72'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtP(ctx.raw)}}},scales:{y:{ticks:{callback:v=>(v*100).toFixed(0)+'%'}}}}}); if(charts.cmpRar)charts.cmpRar.destroy(); charts.cmpRar=new Chart(document.getElementById('cmp-rar-chart'),{type:'bar',data:{labels:['Riesgo Crítico','Vulnerable','Leal'],datasets:[{label:'Entrenamiento',data:[tr.segRar.critico,tr.segRar.vulnerable,tr.segRar.leal],backgroundColor:'#7FA8D4'},{label:'Blind Test',data:[bl.segRar.critico,bl.segRar.vulnerable,bl.segRar.leal],backgroundColor:'#002D72'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt$(ctx.raw)}}},scales:{y:{ticks:{callback:v=>'$'+Math.round(v/1000)+'K'}}}}});}
 
-function setFilter(f){
-  tbl.filter = f;
-  tbl.page   = 1;
-  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-  const map = {'Todos':'.all','Crítico':'.crit','Vulnerable':'.vuln','Leal':'.leal'};
-  const el = document.querySelector('.filter-btn'+map[f]);
-  if(el) el.classList.add('active');
-  const lbl = document.getElementById('presc-lbl');
-  if(lbl) lbl.textContent = f === 'Todos'
-    ? 'PRESCRIPCIÓN INDIVIDUAL — TODOS LOS SEGMENTOS'
-    : 'PRESCRIPCIÓN INDIVIDUAL — SEGMENTO ' + f.toUpperCase();
-  buildTopTable();
-}
+// ── Exportación robusta de la vista activa ──
+function exportView(){
+  const formatEl = document.getElementById('export-format');
+  const format = formatEl ? formatEl.value : 'csv';
 
-function onSearch(){
-  const inp = document.getElementById('tbl-search');
-  tbl.search = inp ? inp.value : '';
-  tbl.page   = 1;
-  buildTopTable();
-}
-
-function sortTable(col){
-  if(tbl.sortCol === col){
-    tbl.sortDir = tbl.sortDir === 'asc' ? 'desc' : 'asc';
-  } else {
-    tbl.sortCol = col;
-    tbl.sortDir = 'desc';
-  }
-  tbl.page = 1;
-  buildTopTable();
-}
-
-function setPageSize(){
-  const sel = document.getElementById('rows-per-page');
-  tbl.pageSize = sel ? parseInt(sel.value) : 10;
-  tbl.page = 1;
-  buildTopTable();
-}
-
-function goPage(p){
-  tbl.page = p;
-  buildTopTable();
-}
-
-function buildTopTable(){
-  const filtered = getFilteredRows();
-  const sorted   = getSortedRows(filtered);
-  const total    = sorted.length;
-  const pages    = Math.max(1, Math.ceil(total / tbl.pageSize));
-  if(tbl.page > pages) tbl.page = pages;
-  const start    = (tbl.page - 1) * tbl.pageSize;
-  const slice    = sorted.slice(start, start + tbl.pageSize);
-
-  const body = document.getElementById('top-table-body');
-  if(!body) return;
-
-  if(slice.length === 0){
-    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;font-style:italic;">Sin resultados para este filtro.</td></tr>`;
-  } else {
-    body.innerHTML = slice.map(r => {
-      const p   = parseFloat(r['P_Churn'])||0;
-      const seg = (r['Segmento']||'').trim();
-      const isCrit = seg==='Riesgo Crítico'||seg==='Riesgo Critico';
-      const pill = isCrit
-        ? '<span class="seg-pill sc">Crítico</span>'
-        : seg==='Vulnerable'
-        ? '<span class="seg-pill sv">Vulnerable</span>'
-        : '<span class="seg-pill sl">Leal</span>';
-      const pColor = p >= 0.70 ? '#B72B2B' : p >= 0.10 ? '#B05000' : p >= 0.04 ? '#7A6000' : '#1B7A3E';
-      const accion = actionMap(seg, p);
-      return `<tr>
-        <td title="${r['CustomerID']||''}">${r['CustomerID']||'—'}</td>
-        <td style="font-weight:700;color:${pColor};">${fmtPd(p)}</td>
-        <td>${pill}</td>
-        <td>${fmt$(parseFloat(r['Gasto_Mensual'])||0)}</td>
-        <td style="font-weight:700;color:#B05000;">${fmt$(parseFloat(r['RaR_Cliente'])||0)}</td>
-        <td>${fmt$(parseFloat(r['LTV_VPN'])||0)}</td>
-        <td style="font-size:10px;color:#555;" title="${accion}">${accion}</td>
-      </tr>`;
-    }).join('');
+  if(format === 'csv'){
+    if(typeof exportCSV === 'function'){
+      exportCSV();
+    } else {
+      alert('No se encontró la función CSV del dashboard.');
+    }
+    return;
   }
 
-  const info = document.getElementById('pager-info');
-  if(info) info.textContent = total > 0
-    ? `${start+1}–${Math.min(start+tbl.pageSize, total)} de ${fmtN(total)} Filas`
-    : '0 Filas';
-
-  const btns = document.getElementById('pager-btns');
-  if(!btns) return;
-  const range = 2;
-  let html = `<button class="pg-btn" onclick="goPage(${tbl.page-1})" ${tbl.page<=1?'disabled':''}>&#8249; Ant.</button>`;
-  for(let i=1; i<=pages; i++){
-    if(i===1 || i===pages || (i>=tbl.page-range && i<=tbl.page+range)){
-      html += `<button class="pg-btn${i===tbl.page?' active':''}" onclick="goPage(${i})">${i}</button>`;
-    } else if(i===tbl.page-range-1 || i===tbl.page+range+1){
-      html += `<span style="padding:0 3px;color:#aaa;font-size:11px;">…</span>`;
-    }
+  const target = document.getElementById('main-content') || document.querySelector('.db');
+  if(!target){
+    alert('No se encontró la vista activa para exportar.');
+    return;
   }
-  html += `<button class="pg-btn" onclick="goPage(${tbl.page+1})" ${tbl.page>=pages?'disabled':''}>Sig. &#8250;</button>`;
-  btns.innerHTML = html;
 
-  const sub = document.getElementById('table-subtitle');
-  if(sub) sub.textContent = `${fmtN(total)} registros · ordenado por ${tbl.sortCol} ${tbl.sortDir}`;
-}
+  if(format === 'pdf'){
+    // PDF confiable: usa el diálogo nativo del navegador.
+    // En destino selecciona "Guardar como PDF".
+    window.print();
+    return;
+  }
 
-// ── Exportar CSV ──
-function exportCSV(){
-  const rows = getSortedRows(getFilteredRows());
-  const cols = ['CustomerID','P_Churn','Segmento','Gasto_Mensual','RaR_Cliente','LTV_VPN'];
-  const header = cols.join(',');
-  const body = rows.map(r => cols.map(c => '"'+(r[c]||'')+'"').join(',')).join('\n');
-  const blob = new Blob([header+'\n'+body], {type:'text/csv'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'churn_grupo4_'+tbl.filter+'.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ── Modo oscuro ──
-function toggleDark(){
-  document.body.classList.toggle('dark-mode');
-}
-
-function renderDashboard(){
-  const kp = computeKPIs(allRows);
-  const now = new Date().toLocaleString('es-HN');
-  document.getElementById('footer-ts').textContent = 'Actualizado: ' + now;
-  document.getElementById('status-lbl').textContent = 'En línea · ' + fmtN(kp.n) + ' registros';
-
-  const churnDisplay = kp.churnRealPct !== null ? fmtP(kp.churnRealPct) : fmtP(kp.pMean) + ' *';
-  const churnSub = kp.churnRealPct !== null ? 'Tasa real observada' : '* Prob. media (sin target)';
-
-  const html = `
-  <div class="sec-lbl">DIAGNÓSTICO DE CARTERA — KPIs EN TIEMPO REAL</div>
-  <div class="kpi-grid">
-    <div class="kpi"><div class="kl">CLIENTES EVALUADOS</div><div class="kv">${fmtN(kp.n)}</div><div class="ks">Dataset activo</div></div>
-    <div class="kpi"><div class="kl">CHURN RATE</div><div class="kv">${churnDisplay}</div><div class="ks">${churnSub}</div></div>
-    <div class="kpi cy"><div class="kl">REVENUE AT RISK</div><div class="kv cy">${fmt$(kp.rar)}</div><div class="ks">Mensual · cartera completa</div></div>
-    <div class="kpi"><div class="kl">LTV TOTAL (VPN)</div><div class="kv">${fmt$(kp.ltv)}</div><div class="ks">Margen 35% · 4 años · 12%</div></div>
-    <div class="kpi cy"><div class="kl">P_CHURN MEDIA</div><div class="kv cy">${kp.pMean.toFixed(4)}</div><div class="ks">Umbral óptimo: 0.10</div></div>
-  </div>
-
-  <div class="sec-lbl">SEGMENTACIÓN PRESCRIPTIVA</div>
-  <div class="row2">
-    <div class="panel">
-      <div class="ph">Distribución por Segmento <span>Umbrales empíricos · Fase VII</span></div>
-      <div class="pb">
-        <div class="seg-row">
-          <div class="sn">${fmtN(kp.segs.critico)}</div>
-          <div class="si"><div class="sname"><span class="seg-pill sc">Riesgo Crítico</span></div><div class="spct">P_Churn ≥ 0.10 · ${fmtP(kp.segs.critico/kp.n)} de cartera</div></div>
-          <div class="srar">${fmt$(kp.segRar.critico)}</div>
-        </div>
-        <div class="seg-row">
-          <div class="sn">${fmtN(kp.segs.vulnerable)}</div>
-          <div class="si"><div class="sname"><span class="seg-pill sv">Vulnerable</span></div><div class="spct">0.04 ≤ P_Churn &lt; 0.10 · ${fmtP(kp.segs.vulnerable/kp.n)} de cartera</div></div>
-          <div class="srar">${fmt$(kp.segRar.vulnerable)}</div>
-        </div>
-        <div class="seg-row" style="border-bottom:none;margin-bottom:0;padding-bottom:0;">
-          <div class="sn">${fmtN(kp.segs.leal)}</div>
-          <div class="si"><div class="sname"><span class="seg-pill sl">Leal</span></div><div class="spct">P_Churn &lt; 0.04 · ${fmtP(kp.segs.leal/kp.n)} de cartera</div></div>
-          <div class="srar">${fmt$(kp.segRar.leal)}</div>
-        </div>
-        <div style="margin-top:12px;border-top:.5px solid #EEF2F8;padding-top:8px;display:flex;gap:16px;">
-          <div><div style="font-size:10px;color:#888;">LTV Riesgo Crítico</div><div style="font-size:13px;font-weight:700;color:#002D72;">${fmt$(kp.segLtv.critico)}</div></div>
-          <div><div style="font-size:10px;color:#888;">LTV Vulnerable</div><div style="font-size:13px;font-weight:700;color:#007A7A;">${fmt$(kp.segLtv.vulnerable)}</div></div>
-          <div><div style="font-size:10px;color:#888;">LTV Leal</div><div style="font-size:13px;font-weight:700;color:#7FA8D4;">${fmt$(kp.segLtv.leal)}</div></div>
-        </div>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="ph">Distribución de P_Churn <span>Histograma · 20 bins · Umbrales Fase VII</span></div>
-      <div class="pb" style="padding-bottom:8px;">
-        <div style="position:relative;width:100%;height:160px;">
-          <canvas id="hist-chart" role="img" aria-label="Histograma de probabilidades de churn">Distribución de probabilidades de churn.</canvas>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#888;">
-          <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;background:#7FA8D4;border-radius:2px;display:inline-block;"></span>Leal (&lt;0.04)</span>
-          <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;background:#00AAAA;border-radius:2px;display:inline-block;"></span>Vulnerable (0.04–0.10)</span>
-          <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;background:#002D72;border-radius:2px;display:inline-block;"></span>Riesgo Crítico (&gt;0.10)</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="sec-lbl" id="presc-lbl">PRESCRIPCIÓN INDIVIDUAL — TODOS LOS SEGMENTOS</div>
-  <div class="panel" style="margin-bottom:12px;">
-    <div class="ph">Clientes con Mayor Revenue at Risk <span id="table-subtitle">Columnas ordenables · Hover para detalle · Paginación dinámica</span></div>
-    <div class="filter-bar">
-      <div class="seg-filters">
-        <label>SEGMENTO</label>
-        <button class="filter-btn all active" onclick="setFilter('Todos')">Todos</button>
-        <button class="filter-btn crit" onclick="setFilter('Crítico')">&#9679; Crítico</button>
-        <button class="filter-btn vuln" onclick="setFilter('Vulnerable')">&#9679; Vulnerable</button>
-        <button class="filter-btn leal" onclick="setFilter('Leal')">&#9679; Leal</button>
-      </div>
-      <div class="search-box">
-        <label>BUSCAR</label>
-        <input class="search-input" id="tbl-search" type="text" placeholder="CustomerID o Acción..." oninput="onSearch()">
-      </div>
-    </div>
-    <div style="overflow-x:auto;">
-      <table class="tbl">
-        <thead><tr>
-          <th style="width:105px;" onclick="sortTable('CustomerID')">CustomerID <span class="sort-icon"></span></th>
-          <th style="width:75px;" onclick="sortTable('P_Churn')">P_Churn <span class="sort-icon"></span></th>
-          <th style="width:105px;">Segmento</th>
-          <th style="width:100px;" onclick="sortTable('Gasto_Mensual')">Gasto Mensual <span class="sort-icon"></span></th>
-          <th style="width:100px;" onclick="sortTable('RaR_Cliente')">RaR Cliente <span class="sort-icon"></span></th>
-          <th style="width:100px;" onclick="sortTable('LTV_VPN')">LTV (VPN) <span class="sort-icon"></span></th>
-          <th style="width:160px;">Acción Recomendada</th>
-        </tr></thead>
-        <tbody id="top-table-body"></tbody>
-      </table>
-    </div>
-    <div class="pager">
-      <div id="pager-info" style="color:#666;">—</div>
-      <div class="pager-btns" id="pager-btns"></div>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:10px;color:#888;">Filas</span>
-        <select class="pg-select" id="rows-per-page" onchange="setPageSize()">
-          <option value="10" selected>10</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div class="sec-lbl">ANÁLISIS FINANCIERO — RaR Y LTV POR SEGMENTO</div>
-  <div class="row3">
-    <div class="panel">
-      <div class="ph">Revenue at Risk por Segmento <span>Barras horizontales</span></div>
-      <div class="pb"><div style="position:relative;width:100%;height:120px;"><canvas id="rar-chart" role="img" aria-label="Revenue at Risk por segmento">RaR por segmento.</canvas></div></div>
-    </div>
-    <div class="panel">
-      <div class="ph">LTV Promedio por Segmento <span>Valor presente neto</span></div>
-      <div class="pb"><div style="position:relative;width:100%;height:120px;"><canvas id="ltv-chart" role="img" aria-label="LTV promedio por segmento">LTV por segmento.</canvas></div></div>
-    </div>
-  </div>
-  `;
-
-  document.getElementById('main-content').innerHTML = html;
-  buildHistogram(kp.pChurnVals);
-  buildRaRChart(kp);
-  buildLTVChart(kp);
-  buildTopTable();
-}
-
-function buildHistogram(vals){
-  const bins = 20;
-  const counts = new Array(bins).fill(0);
-  vals.forEach(v => { const b = Math.min(Math.floor(v*bins), bins-1); counts[b]++; });
-  const labels = Array.from({length:bins}, (_,i) => (i/bins).toFixed(2));
-  const colors = counts.map((_,i) => {
-    const mid = (i+0.5)/bins;
-    if(mid < 0.0412) return '#7FA8D4';
-    if(mid < 0.10)   return '#00AAAA';
-    return '#002D72';
-  });
-  if(charts.hist) charts.hist.destroy();
-  charts.hist = new Chart(document.getElementById('hist-chart'), {
-    type:'bar',
-    data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:0 }] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false} },
-      scales:{
-        x:{ grid:{display:false}, ticks:{maxTicksLimit:6, font:{size:10}, color:'#888'} },
-        y:{ grid:{display:false}, ticks:{font:{size:10}, color:'#888'} }
-      }
+  if(format === 'png'){
+    if(typeof html2canvas === 'undefined'){
+      alert('html2canvas no ha cargado. Revisa conexión a internet o intenta de nuevo.');
+      return;
     }
-  });
+
+    const originalScrollY = window.scrollY;
+    window.scrollTo(0, 0);
+
+    html2canvas(target, {
+      backgroundColor: '#FFFFFF',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight
+    }).then(canvas => {
+      window.scrollTo(0, originalScrollY);
+      const link = document.createElement('a');
+      link.download = 'dashboard_churn_vista.png';
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }).catch(err => {
+      window.scrollTo(0, originalScrollY);
+      alert('No se pudo exportar PNG: ' + err.message);
+    });
+  }
 }
 
-function buildRaRChart(kp){
-  if(charts.rar) charts.rar.destroy();
-  charts.rar = new Chart(document.getElementById('rar-chart'), {
-    type:'bar',
-    data:{ labels:['Riesgo Crítico','Vulnerable','Leal'],
-      datasets:[{ data:[kp.segRar.critico, kp.segRar.vulnerable, kp.segRar.leal],
-        backgroundColor:['#002D72','#00AAAA','#7FA8D4'], borderWidth:0 }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt$(ctx.raw) } } },
-      scales:{
-        x:{ grid:{display:false}, ticks:{ callback: v => '$'+Math.round(v/1000)+'K', font:{size:10}, color:'#888' } },
-        y:{ grid:{display:false}, ticks:{ font:{size:10,weight:'bold'}, color:'#333' } }
-      }
-    }
-  });
-}
-
-function buildLTVChart(kp){
-  const ltvMean = {
-    critico:    kp.segs.critico>0    ? kp.segLtv.critico/kp.segs.critico       : 0,
-    vulnerable: kp.segs.vulnerable>0 ? kp.segLtv.vulnerable/kp.segs.vulnerable : 0,
-    leal:       kp.segs.leal>0       ? kp.segLtv.leal/kp.segs.leal             : 0,
-  };
-  if(charts.ltv) charts.ltv.destroy();
-  charts.ltv = new Chart(document.getElementById('ltv-chart'), {
-    type:'bar',
-    data:{ labels:['Riesgo Crítico','Vulnerable','Leal'],
-      datasets:[{ data:[ltvMean.critico, ltvMean.vulnerable, ltvMean.leal],
-        backgroundColor:['#002D72','#00AAAA','#7FA8D4'], borderWidth:0 }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt$(ctx.raw) } } },
-      scales:{
-        x:{ grid:{display:false}, ticks:{ callback: v => '$'+Math.round(v), font:{size:10}, color:'#888' } },
-        y:{ grid:{display:false}, ticks:{ font:{size:10}, color:'#333' } }
-      }
-    }
-  });
-}
 
 loadData();
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
