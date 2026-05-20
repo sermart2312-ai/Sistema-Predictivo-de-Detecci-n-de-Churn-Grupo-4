@@ -1,738 +1,564 @@
-<!DOCTYPE html>
+
+<h2 class="sr-only">Dashboard interactivo de detección de churn — Grupo 4 UNITEC. Lee datos en tiempo real desde Google Sheets.</h2>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Predictivo de Detección de Churn — Grupo 4 UNITEC</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --unitec:       #002D72;
-  --unitec-mid:   #003A8C;
-  --cyan:         #00CCCC;
-  --cyan-light:   #E0FAFA;
-  --critico:      #002D72;
-  --vulnerable:   #00AAAA;
-  --leal:         #7FA8D4;
-  --danger:       #B72B2B;
-  --warning:      #B05000;
-  --success:      #1B7A3E;
-  --bg:           #F2F5FB;
-  --surface:      #FFFFFF;
-  --border:       #D0DCF0;
-  --text:         #1A1A2E;
-  --text-muted:   #667799;
-  --font:         'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
-  --mono:         'IBM Plex Mono', 'Courier New', monospace;
-}
-body.dark {
-  --bg:         #0A0F1E; --surface: #111827; --border: #1E3055;
-  --text:       #E8EDF8; --text-muted: #7A9AB8; --cyan-light: #003344;
-}
-body.dark .tbl th { background: #001A40; }
-body.dark .tbl td { color: #C8D8EE; }
-body.dark .tbl tr:nth-child(even) td { background: #0D1626; }
-body.dark .tbl tr:hover td { background: #152244; }
-body.dark .hbar-track, body.dark .ltv-track { background: #1A2740; }
-body.dark .seg-row { border-bottom-color: #1A2740; }
-body.dark .filter-bar { background: #0D1626; border-color: #1E3055; }
-body.dark .filter-btn { background: #0A0F1E; border-color: #1E3055; color: #7A9AB8; }
-body.dark .filter-btn.active { background: var(--unitec); color: #fff; }
-body.dark .search-input { background: #0A0F1E; border-color: #1E3055; color: #E8EDF8; }
-body.dark .pg-btn { background: #0A0F1E; border-color: #1E3055; color: #7A9AB8; }
-body.dark .pg-rpp select { background: #0A0F1E; border-color: #1E3055; color: #E8EDF8; }
-body.dark .kpi-val { color: #7FA8D4; }
-body.dark .kpi-val.cy { color: var(--cyan); }
-body.dark .hbar-value { color: #7FA8D4; }
-body.dark .seg-num { color: #7FA8D4; }
-body.dark .seg-row:hover { background: rgba(0,204,204,0.04); }
-body.dark .error-box { background:#1a0a0a; border-color:#5a1a1a; color:#ff9999; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.4; transition: background 0.3s, color 0.3s; }
-
-/* TOPBAR */
-.topbar { background: var(--unitec); padding: 10px 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--cyan); position: sticky; top: 0; z-index: 100; }
-.t-brand { display: flex; flex-direction: column; gap: 2px; }
-.t-title { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: 0.2px; }
-.t-sub   { color: var(--cyan); font-size: 10px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; }
-.t-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.t-model { background: rgba(0,204,204,0.12); border: 1px solid var(--cyan); color: var(--cyan); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 2px; letter-spacing: 0.5px; font-family: var(--mono); }
-.t-status { display: flex; align-items: center; gap: 6px; }
-.t-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-.t-lbl { color: #AAC8F0; font-size: 10px; font-family: var(--mono); }
-.t-btn { background: transparent; border: 1px solid var(--cyan); color: var(--cyan); font-size: 10px; font-weight: 700; padding: 5px 10px; border-radius: 2px; cursor: pointer; font-family: var(--font); letter-spacing: 0.5px; transition: all 0.15s; white-space: nowrap; }
-.t-btn:hover { background: var(--cyan); color: var(--unitec); }
-.t-btn.export-btn { border-color: #AAC8F0; color: #AAC8F0; }
-.t-btn.export-btn:hover { background: #AAC8F0; color: var(--unitec); }
-
-/* Export dropdown */
-.export-wrap { position: relative; }
-.export-menu { display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--unitec-mid); border: 1px solid var(--cyan); border-radius: 3px; min-width: 185px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-.export-wrap.open .export-menu { display: block; }
-.export-menu-item { display: flex; align-items: center; gap: 8px; padding: 9px 14px; font-size: 11px; font-weight: 600; color: #E8EDF8; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid rgba(0,204,204,0.12); }
-.export-menu-item:last-child { border-bottom: none; }
-.export-menu-item:hover { background: rgba(0,204,204,0.12); color: var(--cyan); }
-
-/* Dark toggle */
-.dark-toggle { background: transparent; border: 1px solid #AAC8F0; color: #AAC8F0; font-size: 14px; width: 28px; height: 28px; border-radius: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-.dark-toggle:hover { background: #AAC8F0; color: var(--unitec); }
-
-/* FILTER BAR */
-.filter-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; transition: background 0.3s; }
-.filter-label { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
-.filter-btn-group { display: flex; gap: 4px; }
-.filter-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 2px; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
-.filter-btn:hover { border-color: var(--unitec); color: var(--unitec); }
-.filter-btn.active { background: var(--unitec); border-color: var(--unitec); color: #fff; }
-.filter-sep { width: 1px; height: 20px; background: var(--border); }
-.search-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 4px 10px; border-radius: 2px; font-family: var(--font); width: 180px; outline: none; transition: border-color 0.15s; }
-.search-input:focus { border-color: var(--unitec); }
-.search-input::placeholder { color: var(--text-muted); }
-.filter-count { font-size: 10px; color: var(--text-muted); font-family: var(--mono); white-space: nowrap; }
-
-/* LAYOUT */
-.body { padding: 14px 20px 20px; }
-.sec-label { font-size: 9px; font-weight: 700; letter-spacing: 1.6px; color: var(--cyan); background: var(--unitec); padding: 4px 12px; display: inline-block; margin-bottom: 10px; text-transform: uppercase; }
-
-/* KPI */
-.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
-.kpi { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--unitec); border-radius: 3px; padding: 11px 13px 9px; transition: background 0.3s, border-color 0.3s; cursor: default; }
-.kpi.cy { border-top-color: var(--cyan); }
-.kpi-lbl { font-size: 9px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 5px; }
-.kpi-val { font-size: 22px; font-weight: 700; color: var(--unitec); line-height: 1; font-variant-numeric: tabular-nums; }
-.kpi-val.cy { color: #007A7A; }
-.kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
-
-/* PANELS */
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: background 0.3s, border-color 0.3s; }
-.ph { background: var(--unitec); color: #fff; font-size: 11px; font-weight: 700; padding: 8px 13px; display: flex; align-items: center; justify-content: space-between; }
-.ph-sub { color: var(--cyan); font-size: 9px; font-weight: 400; letter-spacing: 0.3px; }
-.pb { padding: 13px; }
-.row2 { display: grid; grid-template-columns: 1.05fr 1fr; gap: 10px; margin-bottom: 12px; }
-.row3 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-
-/* SEGMENT ROWS */
-.seg-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #EEF3FA; cursor: default; border-radius: 2px; transition: background 0.12s; }
-.seg-row:hover { background: rgba(0,45,114,0.03); }
-.seg-row:last-child { border-bottom: none; padding-bottom: 0; }
-.seg-num { font-size: 20px; font-weight: 700; color: var(--unitec); min-width: 58px; font-variant-numeric: tabular-nums; }
-.seg-info { flex: 1; }
-.seg-name { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
-.seg-pct  { font-size: 10px; color: var(--text-muted); }
-.seg-rar  { font-size: 12px; font-weight: 700; color: var(--warning); text-align: right; min-width: 65px; font-variant-numeric: tabular-nums; }
-
-/* PILLS */
-.pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
-.pill-cr { background: var(--critico); color: #fff; }
-.pill-vl { background: var(--vulnerable); color: #fff; }
-.pill-ly { background: var(--leal); color: #fff; }
-
-/* HBAR */
-.hbar-chart { display: flex; flex-direction: column; gap: 14px; padding: 4px 0; }
-.hbar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
-.hbar-label { font-size: 11px; font-weight: 700; color: var(--text); }
-.hbar-value { font-size: 12px; font-weight: 700; color: var(--unitec); font-family: var(--mono); }
-.hbar-track { background: #EEF3FA; border-radius: 2px; height: 20px; position: relative; overflow: visible; }
-.hbar-fill { height: 100%; border-radius: 2px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; position: relative; transition: width 0.8s cubic-bezier(0.23,1,0.32,1); min-width: 28px; }
-.hbar-fill-lbl { font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap; font-family: var(--mono); }
-.hbar-fill.short .hbar-fill-lbl { display: none; }
-.hbar-fill.short::after { content: attr(data-val); position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%); font-size: 10px; font-weight: 700; color: var(--unitec); white-space: nowrap; font-family: var(--mono); }
-.hbar-pct { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-.hist-wrap { position: relative; height: 170px; }
-
-/* TABLE */
-.tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
-.tbl th { background: var(--unitec); color: #fff; font-size: 10px; font-weight: 700; padding: 7px 9px; text-align: left; letter-spacing: 0.3px; white-space: nowrap; }
-.tbl th[data-sort] { cursor: pointer; user-select: none; }
-.tbl th[data-sort]:hover { background: var(--unitec-mid); }
-.tbl th[data-sort]::after { content: ' ↕'; opacity: 0.4; font-size: 9px; }
-.tbl th[data-sort].asc::after  { content: ' ↑'; opacity: 1; }
-.tbl th[data-sort].desc::after { content: ' ↓'; opacity: 1; }
-.tbl td { padding: 6px 9px; border-bottom: 1px solid #EEF3FA; color: #333; }
-.tbl tr:last-child td { border-bottom: none; }
-.tbl tr:nth-child(even) td { background: #F8FAFD; }
-.tbl tr:hover td { background: #EEF6FF; }
-.p-danger  { font-weight: 700; color: var(--danger); font-family: var(--mono); }
-.p-warning { font-weight: 700; color: var(--warning); font-family: var(--mono); }
-.p-ok      { font-weight: 700; color: var(--success); font-family: var(--mono); }
-
-/* PAGINATION */
-.pagination { display: flex; align-items: center; gap: 6px; padding: 10px 13px; border-top: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
-.pg-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 2px; cursor: pointer; font-family: var(--mono); transition: all 0.12s; }
-.pg-btn:hover:not(:disabled) { border-color: var(--unitec); color: var(--unitec); }
-.pg-btn:disabled { opacity: 0.35; cursor: default; }
-.pg-btn.active { background: var(--unitec); border-color: var(--unitec); color: #fff; }
-.pg-info { font-size: 10px; color: var(--text-muted); font-family: var(--mono); margin-left: auto; }
-.pg-rpp { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
-.pg-rpp select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 10px; padding: 2px 4px; border-radius: 2px; font-family: var(--mono); cursor: pointer; outline: none; }
-
-/* TOOLTIP */
-.tooltip { position: fixed; background: rgba(0,20,60,0.95); color: #E8EDF8; font-size: 10px; padding: 7px 11px; border-radius: 3px; border: 1px solid var(--cyan); pointer-events: none; z-index: 9999; opacity: 0; transition: opacity 0.15s; max-width: 220px; line-height: 1.6; font-family: var(--mono); }
-.tooltip.visible { opacity: 1; }
-.tooltip-title { font-weight: 700; color: var(--cyan); margin-bottom: 3px; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; }
-
-/* FOOTER */
-.footer { background: var(--unitec); color: #AAC8F0; font-size: 10px; padding: 7px 22px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cyan); }
-.footer span { color: var(--cyan); font-family: var(--mono); }
-
-/* ERROR / LOADING */
-.error-box { background: #FFF0F0; border: 1px solid #FFB3B3; border-left: 4px solid var(--danger); border-radius: 3px; padding: 14px 16px; font-size: 12px; color: #8B0000; margin: 20px 0; }
-.error-box code { background: #FFE0E0; padding: 1px 5px; border-radius: 2px; font-family: var(--mono); font-size: 11px; }
-.loading { text-align: center; padding: 50px; color: var(--unitec); font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
-
-/* TOAST */
-.toast { position: fixed; bottom: 22px; right: 22px; background: var(--unitec); color: #fff; border: 1px solid var(--cyan); border-radius: 3px; padding: 10px 16px; font-size: 11px; font-weight: 600; z-index: 9999; opacity: 0; transform: translateY(10px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
-.toast.show { opacity: 1; transform: translateY(0); }
-.toast-icon { color: var(--cyan); margin-right: 6px; }
-
-/* PRINT */
-@media print {
-  .topbar { position: relative; }
-  .filter-bar, .pagination, .export-wrap, .dark-toggle { display: none !important; }
-  .t-btn { display: none !important; }
-  .panel { break-inside: avoid; }
-}
+*{box-sizing:border-box;margin:0;padding:0;}
+.db{background:#fff;font-family:'Segoe UI',Arial,sans-serif;}
+.topbar{background:#002D72;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.t-title{color:#fff;font-size:15px;font-weight:700;}
+.t-sub{color:#00CCCC;font-size:11px;margin-top:2px;}
+.t-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.badge{background:#00FFFF;color:#002D72;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#00FFFF;display:inline-block;}
+.status-lbl{color:#aac8f0;font-size:11px;}
+.refresh-btn{background:transparent;border:1px solid #00FFFF;color:#00FFFF;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;cursor:pointer;}
+.refresh-btn:hover{background:#00FFFF;color:#002D72;}
+.export-btn{background:transparent;border:1px solid #7FA8D4;color:#7FA8D4;font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;cursor:pointer;}
+.export-btn:hover{background:#7FA8D4;color:#002D72;}
+.dark-btn{background:transparent;border:1px solid #aac8f0;color:#aac8f0;font-size:13px;padding:3px 8px;border-radius:3px;cursor:pointer;line-height:1;}
+.dark-btn:hover{background:#aac8f0;color:#002D72;}
+.body{padding:14px 16px;}
+.sec-lbl{background:#002D72;color:#00FFFF;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 12px;display:inline-block;margin-bottom:10px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
+.kpi{background:#F4F7FC;border-left:3px solid #002D72;border-radius:3px;padding:10px 12px;}
+.kpi.cy{border-left-color:#00AAAA;}
+.kl{font-size:10px;color:#666;font-weight:700;letter-spacing:.4px;margin-bottom:4px;}
+.kv{font-size:20px;font-weight:700;color:#002D72;line-height:1.1;}
+.kv.cy{color:#007A7A;}
+.ks{font-size:10px;color:#999;margin-top:2px;}
+.row2{display:grid;grid-template-columns:1.1fr 1fr;gap:10px;margin-bottom:12px;}
+.panel{background:#fff;border:1px solid #D8E2F0;border-radius:3px;overflow:hidden;}
+.ph{background:#002D72;color:#fff;font-size:11px;font-weight:700;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;}
+.ph span{color:#00FFFF;font-size:9px;font-weight:400;}
+.pb{padding:12px;}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.seg-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;}
+.sc{background:#002D72;color:#fff;}
+.sv{background:#00CCCC;color:#002D72;}
+.sl{background:#7FA8D4;color:#fff;}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+.tbl th{background:#002D72;color:#fff;font-size:10px;font-weight:700;padding:6px 8px;text-align:left;cursor:pointer;user-select:none;}
+.tbl th:hover{background:#003a94;}
+.tbl th .sort-icon{margin-left:4px;opacity:.5;font-size:9px;}
+.tbl th.sort-asc .sort-icon::after{content:'▲';}
+.tbl th.sort-desc .sort-icon::after{content:'▼';}
+.tbl th:not(.sort-asc):not(.sort-desc) .sort-icon::after{content:'⇅';}
+.tbl td{padding:5px 8px;border-bottom:.5px solid #EEF2F8;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tbl tr:nth-child(even) td{background:#F8FAFD;}
+.tbl tr:hover td{background:#EEF5FF;}
+.footer{background:#002D72;color:#aac8f0;font-size:10px;padding:6px 16px;display:flex;justify-content:space-between;align-items:center;}
+.footer span{color:#00FFFF;}
+.loading{text-align:center;padding:30px;color:#002D72;font-size:13px;font-weight:600;}
+.error-box{background:#FFF0F0;border:1px solid #FFB3B3;border-radius:4px;padding:12px;font-size:12px;color:#8B0000;margin:8px 0;}
+.seg-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:.5px solid #EEF2F8;}
+.sn{font-size:18px;font-weight:700;color:#002D72;min-width:55px;}
+.si{flex:1;}
+.sname{font-size:11px;font-weight:700;color:#333;}
+.spct{font-size:10px;color:#888;}
+.srar{font-size:11px;font-weight:700;color:#B05000;text-align:right;min-width:60px;}
+/* ── Barra de filtros y búsqueda ── */
+.filter-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:8px 12px;background:#F4F7FC;border-bottom:1px solid #D8E2F0;}
+.seg-filters{display:flex;gap:6px;align-items:center;}
+.seg-filters label{font-size:10px;font-weight:700;color:#666;letter-spacing:.4px;}
+.filter-btn{border:none;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.filter-btn.all  {background:#E8EDF5;color:#002D72;}
+.filter-btn.all.active  {background:#002D72;color:#fff;}
+.filter-btn.crit {background:#E8EDF5;color:#002D72;}
+.filter-btn.crit.active {background:#002D72;color:#fff;}
+.filter-btn.vuln {background:#E8EDF5;color:#007A7A;}
+.filter-btn.vuln.active {background:#00AAAA;color:#002D72;}
+.filter-btn.leal {background:#E8EDF5;color:#4A7AAA;}
+.filter-btn.leal.active {background:#7FA8D4;color:#fff;}
+.filter-btn:hover{opacity:.85;}
+.search-box{display:flex;align-items:center;gap:6px;}
+.search-box label{font-size:10px;font-weight:700;color:#666;letter-spacing:.4px;}
+.search-input{border:1px solid #C8D4E8;border-radius:3px;padding:4px 8px;font-size:11px;color:#333;width:200px;outline:none;}
+.search-input:focus{border-color:#002D72;}
+/* ── Paginación ── */
+.pager{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#F8FAFD;border-top:1px solid #EEF2F8;font-size:11px;color:#666;}
+.pager-btns{display:flex;gap:4px;align-items:center;}
+.pg-btn{border:1px solid #C8D4E8;background:#fff;color:#002D72;font-size:11px;font-weight:700;padding:3px 9px;border-radius:3px;cursor:pointer;}
+.pg-btn:hover{background:#002D72;color:#fff;}
+.pg-btn.active{background:#002D72;color:#fff;border-color:#002D72;}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
+.pg-select{border:1px solid #C8D4E8;border-radius:3px;padding:3px 6px;font-size:11px;color:#333;background:#fff;cursor:pointer;}
+/* Tooltip hover */
+.tbl td[title]{cursor:help;}
 </style>
 
-<!-- TOPBAR -->
-<div class="topbar" id="topbar">
-  <div class="t-brand">
+<div class="db">
+<div class="topbar">
+  <div>
     <div class="t-title">Sistema Predictivo de Detección de Churn — Grupo 4</div>
     <div class="t-sub">UNITEC · Datos en tiempo real desde Google Sheets · HistGradientBoosting</div>
   </div>
   <div class="t-right">
-    <div class="t-status">
-      <div class="t-dot" id="status-dot"></div>
-      <span class="t-lbl" id="status-lbl">Conectando...</span>
-    </div>
-    <div class="t-model">AUC-ROC: 0.9741</div>
-    <button class="t-btn" onclick="loadData()">↻ Actualizar</button>
-    <div class="export-wrap" id="exportWrap">
-      <button class="t-btn export-btn" onclick="toggleExport(event)">⬇ Exportar ▾</button>
-      <div class="export-menu">
-        <div class="export-menu-item" onclick="exportPDF()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 12h10M7 17h6"/></svg>
-          Exportar PDF
-        </div>
-        <div class="export-menu-item" onclick="exportPNG()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-          Exportar PNG (imagen)
-        </div>
-        <div class="export-menu-item" onclick="exportCSV()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Exportar CSV (tabla)
-        </div>
-      </div>
-    </div>
-    <button class="dark-toggle" onclick="toggleDark()" title="Modo oscuro/claro" id="darkBtn">🌙</button>
+    <span class="badge">AUC-ROC: 0.9741</span>
+    <span class="status-dot"></span>
+    <span class="status-lbl" id="status-lbl">Conectando...</span>
+    <button class="refresh-btn" onclick="loadData()">&#8635; Actualizar</button>
+    <button class="export-btn" onclick="exportCSV()">&#8595; Exportar</button>
+    <button class="dark-btn" id="dark-toggle" onclick="toggleDark()" title="Modo oscuro">&#9790;</button>
   </div>
 </div>
 
-<!-- FILTER BAR -->
-<div class="filter-bar" id="filterBar" style="display:none;">
-  <span class="filter-label">Segmento</span>
-  <div class="filter-btn-group">
-    <button class="filter-btn active" data-seg="all"       onclick="setFilter('all',this)">Todos</button>
-    <button class="filter-btn"       data-seg="critico"    onclick="setFilter('critico',this)">🔴 Crítico</button>
-    <button class="filter-btn"       data-seg="vulnerable" onclick="setFilter('vulnerable',this)">🟡 Vulnerable</button>
-    <button class="filter-btn"       data-seg="leal"       onclick="setFilter('leal',this)">🔵 Leal</button>
-  </div>
-  <div class="filter-sep"></div>
-  <span class="filter-label">Buscar</span>
-  <input class="search-input" type="text" id="searchInput" placeholder="CustomerID o Acción..." oninput="applySearch()">
-  <span class="filter-count" id="filterCount"></span>
-</div>
+<div class="body">
 
-<!-- BODY -->
-<div class="body" id="mainBody">
-  <div id="main-content">
-    <div class="loading" id="loading-msg">Cargando datos desde Churn_Grupo4_Dashboard…</div>
+<div id="main-content">
+  <div class="loading" id="loading-msg">
+    <i class="ti ti-loader" aria-hidden="true"></i> Cargando datos desde Churn_Grupo4_Dashboard...
   </div>
 </div>
 
-<!-- FOOTER -->
-<div class="footer" id="footer">
+</div>
+
+<div class="footer">
   <div>Proyecto Grupo 4 · UNITEC · <span id="footer-ts">—</span></div>
   <div>Fuente: <span>Churn_Grupo4_Dashboard</span> · Google Sheets · CSV público</div>
   <div>Sheet ID: <span>1EmptBURotqtpLhtHWOIyz98NKvWDuOWGzyuduOr86AI</span></div>
 </div>
-
-<!-- Tooltip global -->
-<div class="tooltip" id="tooltip"></div>
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const SHEET_ID = '1EmptBURotqtpLhtHWOIyz98NKvWDuOWGzyuduOr86AI';
-const UNITEC   = '#002D72';
-const CYAN2    = '#00AAAA';
-const LEAL_C   = '#7FA8D4';
+let allRows = [];
+let charts  = {};
 
-let allRows = [], filteredRows = [], charts = {};
-let currentSeg = 'all', currentSearch = '';
-let sortCol = 'RaR_Cliente', sortDir = 'desc';
-let currentPage = 1, rowsPerPage = 10;
+// ── Estado de la tabla ──
+let tbl = {
+  filter:   'Todos',
+  search:   '',
+  sortCol:  'RaR_Cliente',
+  sortDir:  'desc',
+  page:     1,
+  pageSize: 10,
+};
 
-// Formatters
-const fmt$ = v => '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-const fmtK = v => { const n=Number(v); return n>=1e6?'$'+(n/1e6).toFixed(2)+'M':n>=1e3?'$'+(n/1e3).toFixed(1)+'K':fmt$(n); };
-const fmtN = v => Number(v).toLocaleString('en-US');
-const fmtP = v => (Number(v)*100).toFixed(1)+'%';
-const fmtD = v => Number(v).toFixed(4);
+function fmt$(v){ return '$' + Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtN(v){ return Number(v).toLocaleString('en-US'); }
+function fmtP(v){ return (Number(v)*100).toFixed(1)+'%'; }
+function fmtPd(v){ return Number(v).toFixed(4); }
 
-// Tooltip
-const tip = document.getElementById('tooltip');
-function showTip(e, title, lines) {
-  tip.innerHTML = `<div class="tooltip-title">${title}</div>${lines.map(l=>`<div>${l}</div>`).join('')}`;
-  tip.classList.add('visible');
-  moveTip(e);
-}
-function moveTip(e) {
-  let x=e.clientX+14, y=e.clientY+10;
-  if(x+230>window.innerWidth) x=e.clientX-235;
-  if(y+130>window.innerHeight) y=e.clientY-130;
-  tip.style.left=x+'px'; tip.style.top=y+'px';
-}
-function hideTip() { tip.classList.remove('visible'); }
-document.addEventListener('mousemove', moveTip);
-
-// Toast
-function showToast(msg, icon='✓') {
-  const t=document.getElementById('toast');
-  t.innerHTML=`<span class="toast-icon">${icon}</span>${msg}`;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3200);
+// ── Acciones por segmento alineadas con Fase VII ──
+function actionMap(seg, p){
+  if(seg === 'Riesgo Crítico' || seg === 'Riesgo Critico'){
+    if(p >= 0.85) return 'Llamada ejecutiva 48h';
+    if(p >= 0.50) return 'Descuento exclusivo 15-20%';
+    return 'Monitoreo intensivo';
+  }
+  if(seg === 'Vulnerable'){
+    if(p >= 0.07) return 'Campaña digital + upgrade';
+    return 'Encuesta de satisfacción';
+  }
+  return 'Programa de lealtad';
 }
 
-// Dark mode
-function toggleDark() {
-  document.body.classList.toggle('dark');
-  const d=document.body.classList.contains('dark');
-  document.getElementById('darkBtn').textContent=d?'☀️':'🌙';
-  localStorage.setItem('darkMode',d?'1':'0');
-  if(charts.hist) rebuildHistogram();
-}
-if(localStorage.getItem('darkMode')==='1'){
-  document.body.classList.add('dark');
-  document.addEventListener('DOMContentLoaded',()=>{document.getElementById('darkBtn').textContent='☀️';});
+async function loadData(){
+  document.getElementById('status-lbl').textContent = 'Actualizando...';
+  loadPublicCSV();
 }
 
-// Export dropdown
-function toggleExport(e) {
-  e.stopPropagation();
-  document.getElementById('exportWrap').classList.toggle('open');
-}
-document.addEventListener('click',()=>document.getElementById('exportWrap').classList.remove('open'));
-
-// Export PDF
-function exportPDF() {
-  document.getElementById('exportWrap').classList.remove('open');
-  showToast('Abriendo diálogo de impresión…','⏳');
-  setTimeout(()=>window.print(), 300);
-}
-
-// Export PNG
-async function exportPNG() {
-  document.getElementById('exportWrap').classList.remove('open');
-  showToast('Capturando dashboard…','⏳');
+async function loadPublicCSV(){
+  const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Prescripcion_Individual`;
   try {
-    const el=document.getElementById('mainBody');
-    const isDark=document.body.classList.contains('dark');
-    const bg=isDark?'#0A0F1E':'#F2F5FB';
-    const canvas=await html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true,logging:false});
-    const link=document.createElement('a');
-    link.download=`churn_grupo4_${new Date().toISOString().slice(0,10)}.png`;
-    link.href=canvas.toDataURL('image/png');
-    link.click();
-    showToast('Imagen PNG descargada','✓');
-  } catch(err) { showToast('Error: '+err.message,'✗'); }
-}
-
-// Export CSV
-function exportCSV() {
-  document.getElementById('exportWrap').classList.remove('open');
-  if(!filteredRows.length){showToast('Sin datos para exportar','✗');return;}
-  const cols=['CustomerID','P_Churn','Segmento','Gasto_Mensual','RaR_Cliente','LTV_VPN'];
-  const header=cols.join(',');
-  const rows=filteredRows.map(r=>cols.map(c=>`"${(r[c]||'').replace(/"/g,'""')}"`).join(','));
-  const csv=[header,...rows].join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download=`churn_prescripcion_${new Date().toISOString().slice(0,10)}.csv`;
-  link.click();
-  showToast(`CSV: ${filteredRows.length} registros exportados`,'✓');
-}
-
-// Data load
-async function loadData() {
-  document.getElementById('status-lbl').textContent='Actualizando…';
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Prescripcion_Individual`;
-  try {
-    const res=await fetch(url);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text=await res.text();
-    const lines=text.trim().split('\n');
-    const headers=parseCSVLine(lines[0]);
-    allRows=lines.slice(1).map(line=>{
-      const vals=parseCSVLine(line);
-      const obj={};
-      headers.forEach((h,i)=>obj[h]=vals[i]||'');
+    const res  = await fetch(exportUrl);
+    if(!res.ok) throw new Error('CSV fetch failed');
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+    allRows = lines.slice(1).map(line => {
+      const vals = line.split(',').map(v => v.replace(/"/g,'').trim());
+      let obj = {};
+      headers.forEach((h,i) => obj[h] = vals[i] || '');
       return obj;
     });
-    filteredRows=allRows;
-    document.getElementById('filterBar').style.display='flex';
     renderDashboard();
-  } catch(e){ showError(e.message); }
-}
-
-function parseCSVLine(line) {
-  const result=[];let cur='';let inQ=false;
-  for(let i=0;i<line.length;i++){
-    const c=line[i];
-    if(c==='"'){inQ=!inQ;}
-    else if(c===','&&!inQ){result.push(cur.trim());cur='';}
-    else{cur+=c;}
+  } catch(e){
+    showError(e.message);
   }
-  result.push(cur.trim());return result;
 }
 
-function showError(msg) {
-  document.getElementById('status-lbl').textContent='Error de conexión';
-  document.getElementById('status-dot').style.background='#B72B2B';
-  document.getElementById('main-content').innerHTML=`<div class="error-box"><strong>No se pudo conectar con Google Sheets.</strong><br><br>Asegúrate de que la Sheet <em>Churn_Grupo4_Dashboard</em> tiene permisos de lectura pública.<br>Desde Colab ejecuta: <code>sh.share(None, perm_type='anyone', role='reader')</code><br><br><strong>Detalle técnico:</strong> ${msg}</div>`;
-}
-
-// Filters
-function setFilter(seg,btn) {
-  currentSeg=seg;currentPage=1;
-  document.querySelectorAll('.filter-btn[data-seg]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  applyFilters();
-}
-function applySearch() { currentSearch=document.getElementById('searchInput').value.toLowerCase(); currentPage=1; applyFilters(); }
-function applyFilters() {
-  filteredRows=allRows.filter(r=>{
-    const s=(r['Segmento']||'').trim();
-    let segOk=true;
-    if(currentSeg==='critico')    segOk=s==='Riesgo Crítico'||s==='Riesgo Critico';
-    if(currentSeg==='vulnerable') segOk=s==='Vulnerable';
-    if(currentSeg==='leal')       segOk=s!=='Riesgo Crítico'&&s!=='Riesgo Critico'&&s!=='Vulnerable';
-    if(!segOk) return false;
-    if(currentSearch){
-      const cid=(r['CustomerID']||'').toLowerCase();
-      const act=actionMap(parseFloat(r['P_Churn'])||0).toLowerCase();
-      return cid.includes(currentSearch)||act.includes(currentSearch);
-    }
-    return true;
-  });
-  const cnt=document.getElementById('filterCount');
-  cnt.textContent=(currentSeg!=='all'||currentSearch)?`${fmtN(filteredRows.length)} de ${fmtN(allRows.length)} registros`:'';
-  renderDashboard();
-}
-
-// Action map
-const actionMap=p=>p>=0.85?'Llamada ejecutiva 48h':p>=0.70?'Descuento exclusivo 20%':p>=0.50?'Campaña retención digital':'Monitoreo intensivo';
-
-// Sort
-function setSort(col) {
-  if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
-  else{sortCol=col;sortDir='desc';}
-  renderTable();
-}
-function getSortedRows() {
-  const numCols=['P_Churn','Gasto_Mensual','RaR_Cliente','LTV_VPN'];
-  return [...filteredRows]
-    .filter(r=>{const s=(r['Segmento']||'').trim();return s==='Riesgo Crítico'||s==='Riesgo Critico';})
-    .sort((a,b)=>{
-      if(numCols.includes(sortCol)){
-        const av=parseFloat(a[sortCol])||0, bv=parseFloat(b[sortCol])||0;
-        return sortDir==='desc'?bv-av:av-bv;
-      }
-      const as=(a[sortCol]||'').toString(),bs=(b[sortCol]||'').toString();
-      return sortDir==='desc'?bs.localeCompare(as):as.localeCompare(bs);
-    });
-}
-
-function renderTable() {
-  const rows=getSortedRows();
-  const total=rows.length;
-  const totalPages=Math.max(1,Math.ceil(total/rowsPerPage));
-  currentPage=Math.min(currentPage,totalPages);
-  const start=(currentPage-1)*rowsPerPage;
-  const pageRows=rows.slice(start,start+rowsPerPage);
-
-  const tbody=document.getElementById('tbl-body');
-  const pgEl=document.getElementById('pagination');
-  if(!tbody||!pgEl) return;
-
-  tbody.innerHTML=pageRows.length?pageRows.map(r=>{
-    const p=parseFloat(r['P_Churn'])||0;
-    const cls=p>=0.70?'p-danger':p>=0.30?'p-warning':'p-ok';
-    const seg=(r['Segmento']||'').trim();
-    const pill=(seg==='Riesgo Crítico'||seg==='Riesgo Critico')?'<span class="pill pill-cr">Crítico</span>':seg==='Vulnerable'?'<span class="pill pill-vl">Vulnerable</span>':'<span class="pill pill-ly">Leal</span>';
-    const rar=parseFloat(r['RaR_Cliente'])||0;
-    const ltv=parseFloat(r['LTV_VPN'])||0;
-    const gasto=parseFloat(r['Gasto_Mensual'])||0;
-    return `<tr onmouseenter="showTip(event,'${r['CustomerID']||'—'}',['P_Churn: ${fmtD(p)}','Segmento: Riesgo Crítico','Gasto Mensual: ${fmt$(gasto)}','RaR: ${fmt$(rar)}','LTV (VPN): ${fmt$(ltv)}','Acción: ${actionMap(p)}'])" onmouseleave="hideTip()">
-      <td style="font-family:var(--mono);font-size:10px;">${r['CustomerID']||'—'}</td>
-      <td class="${cls}">${fmtD(p)}</td>
-      <td>${pill}</td>
-      <td>${fmt$(gasto)}</td>
-      <td style="font-weight:700;color:var(--warning);font-family:var(--mono);">${fmt$(rar)}</td>
-      <td style="font-family:var(--mono);">${fmt$(ltv)}</td>
-      <td style="font-size:10px;color:#555;">${actionMap(p)}</td>
-    </tr>`;
-  }).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">Sin clientes en segmento Riesgo Crítico con los filtros actuales</td></tr>';
-
-  document.querySelectorAll('.tbl th[data-sort]').forEach(th=>{
-    th.classList.remove('asc','desc');
-    if(th.dataset.sort===sortCol) th.classList.add(sortDir);
-  });
-
-  const makePages=()=>{
-    const pages=[];
-    const halfWin=2;
-    let s=Math.max(1,currentPage-halfWin), e=Math.min(totalPages,currentPage+halfWin);
-    if(s>1) pages.push(`<button class="pg-btn" onclick="changePage(1)">1</button>`);
-    if(s>2) pages.push(`<span style="color:var(--text-muted);font-size:10px;padding:0 2px;">…</span>`);
-    for(let i=s;i<=e;i++) pages.push(`<button class="pg-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`);
-    if(e<totalPages-1) pages.push(`<span style="color:var(--text-muted);font-size:10px;padding:0 2px;">…</span>`);
-    if(e<totalPages) pages.push(`<button class="pg-btn" onclick="changePage(${totalPages})">${totalPages}</button>`);
-    return pages.join('');
-  };
-
-  pgEl.innerHTML=`
-    <button class="pg-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Ant.</button>
-    ${makePages()}
-    <button class="pg-btn" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>Sig. ›</button>
-    <span class="pg-info">${start+1}–${Math.min(start+rowsPerPage,total)} de ${fmtN(total)}</span>
-    <span class="pg-rpp">Filas: <select onchange="setRPP(this.value)">${[5,10,20,50].map(n=>`<option value="${n}" ${n===rowsPerPage?'selected':''}>${n}</option>`).join('')}</select></span>
-  `;
-}
-
-function changePage(p) {
-  const total=Math.max(1,Math.ceil(getSortedRows().length/rowsPerPage));
-  currentPage=Math.max(1,Math.min(p,total));
-  renderTable();
-}
-function setRPP(n){rowsPerPage=parseInt(n);currentPage=1;renderTable();}
-
-// KPIs
-function computeKPIs(rows) {
-  const n=rows.length||1;
-  const pVals=rows.map(r=>parseFloat(r['P_Churn'])||0);
-  const pMean=pVals.reduce((a,v)=>a+v,0)/n;
-  const rar=rows.reduce((a,r)=>a+(parseFloat(r['RaR_Cliente'])||0),0);
-  const ltv=rows.reduce((a,r)=>a+(parseFloat(r['LTV_VPN'])||0),0);
-  const segs={critico:0,vulnerable:0,leal:0};
-  const segRar={critico:0,vulnerable:0,leal:0};
-  const segLtv={critico:0,vulnerable:0,leal:0};
-  rows.forEach(r=>{
-    const s=(r['Segmento']||'').trim();
-    const rc=parseFloat(r['RaR_Cliente'])||0;
-    const lc=parseFloat(r['LTV_VPN'])||0;
-    if(s==='Riesgo Crítico'||s==='Riesgo Critico'){segs.critico++;segRar.critico+=rc;segLtv.critico+=lc;}
-    else if(s==='Vulnerable'){segs.vulnerable++;segRar.vulnerable+=rc;segLtv.vulnerable+=lc;}
-    else{segs.leal++;segRar.leal+=rc;segLtv.leal+=lc;}
-  });
-  let churnRealPct=null;
-  if(rows[0]&&rows[0]['Churn_Real']!==undefined){
-    churnRealPct=rows.reduce((a,r)=>a+(parseInt(r['Churn_Real'])||0),0)/n;
-  }
-  const ltvMean={
-    critico:segs.critico>0?segLtv.critico/segs.critico:0,
-    vulnerable:segs.vulnerable>0?segLtv.vulnerable/segs.vulnerable:0,
-    leal:segs.leal>0?segLtv.leal/segs.leal:0
-  };
-  return{n,pVals,pMean,rar,ltv,segs,segRar,segLtv,ltvMean,churnRealPct};
-}
-
-// Render dashboard
-function renderDashboard() {
-  const kp=computeKPIs(filteredRows);
-  const now=new Date().toLocaleString('es-HN');
-  document.getElementById('footer-ts').textContent='Actualizado: '+now;
-  document.getElementById('status-lbl').textContent='En línea · '+fmtN(kp.n)+' registros';
-  document.getElementById('status-dot').style.background='#00CCCC';
-
-  const churnDisplay=kp.churnRealPct!==null?fmtP(kp.churnRealPct):fmtP(kp.pMean)+' *';
-  const churnSub=kp.churnRealPct!==null?'Tasa real observada':'* Prob. media (sin target)';
-
-  const rarMax=Math.max(kp.segRar.critico,kp.segRar.vulnerable,kp.segRar.leal,1);
-  const mkBar=(segs,totMax,fmt)=>segs.map(b=>{
-    const pct=(b.val/totMax*100).toFixed(1);
-    const isShort=b.val/totMax<0.12;
-    const extras=b.tip?`onmouseenter="showTip(event,'${b.tip[0]}',${JSON.stringify(b.tip.slice(1))})" onmouseleave="hideTip()"` : '';
-    return `<div class="hbar-item" ${extras}>
-      <div class="hbar-header"><span class="hbar-label"><span class="pill ${b.pill}" style="font-size:9px;">${b.label}</span></span><span class="hbar-value">${fmt(b.val)}</span></div>
-      <div class="hbar-track"><div class="hbar-fill ${isShort?'short':''}" style="width:${pct}%;background:${b.color};" data-val="${fmt(b.val)}"><span class="hbar-fill-lbl">${fmt(b.val)}</span></div></div>
-      <div class="hbar-pct">${pct}% del total · ${b.n!==undefined?fmtN(b.n)+' clientes':'LTV medio x cliente'}</div>
+function showError(msg){
+  document.getElementById('status-lbl').textContent = 'Error de conexión';
+  document.getElementById('main-content').innerHTML = `
+    <div class="error-box">
+      <strong>No se pudo conectar con Google Sheets.</strong><br>
+      Asegúrate de que la Sheet <em>Churn_Grupo4_Dashboard</em> tiene permisos de lectura pública (cualquiera con el enlace).<br>
+      Desde tu notebook ejecuta: <code>sh.share(None, perm_type='anyone', role='reader')</code><br><br>
+      Detalle técnico: ${msg}
     </div>`;
-  }).join('');
+}
 
-  const rarBarsData=[
-    {label:'Riesgo Crítico',val:kp.segRar.critico,color:UNITEC,pill:'pill-cr',n:kp.segs.critico,tip:['RaR · Riesgo Crítico','Total: '+fmtK(kp.segRar.critico),'Clientes: '+fmtN(kp.segs.critico)]},
-    {label:'Vulnerable',val:kp.segRar.vulnerable,color:CYAN2,pill:'pill-vl',n:kp.segs.vulnerable,tip:['RaR · Vulnerable','Total: '+fmtK(kp.segRar.vulnerable),'Clientes: '+fmtN(kp.segs.vulnerable)]},
-    {label:'Leal',val:kp.segRar.leal,color:LEAL_C,pill:'pill-ly',n:kp.segs.leal,tip:['RaR · Leal','Total: '+fmtK(kp.segRar.leal),'Clientes: '+fmtN(kp.segs.leal)]},
-  ];
-  const ltvMax=Math.max(kp.ltvMean.critico,kp.ltvMean.vulnerable,kp.ltvMean.leal,1);
-  const ltvBarsData=[
-    {label:'Riesgo Crítico',val:kp.ltvMean.critico,color:UNITEC,pill:'pill-cr',tip:['LTV Promedio · Crítico','LTV medio: '+fmt$(kp.ltvMean.critico),'Margen 35% · 4 años · 12%']},
-    {label:'Vulnerable',val:kp.ltvMean.vulnerable,color:CYAN2,pill:'pill-vl',tip:['LTV Promedio · Vulnerable','LTV medio: '+fmt$(kp.ltvMean.vulnerable),'Margen 35% · 4 años · 12%']},
-    {label:'Leal',val:kp.ltvMean.leal,color:LEAL_C,pill:'pill-ly',tip:['LTV Promedio · Leal','LTV medio: '+fmt$(kp.ltvMean.leal),'Margen 35% · 4 años · 12%']},
-  ];
+function computeKPIs(rows){
+  const n     = rows.length;
+  const rar   = rows.reduce((a,r) => a + (parseFloat(r['RaR_Cliente'])||0), 0);
+  const ltv   = rows.reduce((a,r) => a + (parseFloat(r['LTV_VPN'])||0), 0);
+  const pChurnVals = rows.map(r => parseFloat(r['P_Churn'])||0);
+  const pMean = pChurnVals.reduce((a,v)=>a+v,0)/n;
+  const segs = {critico:0, vulnerable:0, leal:0};
+  const segRar = {critico:0, vulnerable:0, leal:0};
+  const segLtv = {critico:0, vulnerable:0, leal:0};
+  rows.forEach(r => {
+    const seg = (r['Segmento']||'').trim();
+    const rar_c = parseFloat(r['RaR_Cliente'])||0;
+    const ltv_c = parseFloat(r['LTV_VPN'])||0;
+    if(seg === 'Riesgo Crítico' || seg === 'Riesgo Critico'){ segs.critico++; segRar.critico+=rar_c; segLtv.critico+=ltv_c; }
+    else if(seg === 'Vulnerable'){ segs.vulnerable++; segRar.vulnerable+=rar_c; segLtv.vulnerable+=ltv_c; }
+    else { segs.leal++; segRar.leal+=rar_c; segLtv.leal+=ltv_c; }
+  });
+  let churnRealPct = null;
+  if(rows[0] && rows[0]['Churn_Real'] !== undefined){
+    const sum = rows.reduce((a,r)=>a+(parseInt(r['Churn_Real'])||0),0);
+    churnRealPct = sum/n;
+  }
+  return {n, rar, ltv, pMean, segs, segRar, segLtv, churnRealPct, pChurnVals};
+}
 
-  document.getElementById('main-content').innerHTML=`
-  <div class="sec-label">Diagnóstico de Cartera — KPIs en Tiempo Real</div>
+// ── Filtrar ──
+function getFilteredRows(){
+  return allRows.filter(r => {
+    const seg = (r['Segmento']||'').trim();
+    const matchSeg =
+      tbl.filter === 'Todos'      ? true :
+      tbl.filter === 'Crítico'    ? (seg==='Riesgo Crítico'||seg==='Riesgo Critico') :
+      tbl.filter === 'Vulnerable' ? (seg==='Vulnerable') :
+      (seg !== 'Riesgo Crítico' && seg !== 'Riesgo Critico' && seg !== 'Vulnerable');
+    if(!matchSeg) return false;
+    if(!tbl.search) return true;
+    const q = tbl.search.toLowerCase();
+    return (r['CustomerID']||'').toLowerCase().includes(q) ||
+           actionMap(seg, parseFloat(r['P_Churn'])||0).toLowerCase().includes(q);
+  });
+}
+
+// ── Ordenar ──
+function getSortedRows(rows){
+  const col = tbl.sortCol;
+  const dir = tbl.sortDir === 'asc' ? 1 : -1;
+  return [...rows].sort((a,b) => {
+    let av = parseFloat(a[col]);
+    let bv = parseFloat(b[col]);
+    if(isNaN(av)) av = a[col]||'';
+    if(isNaN(bv)) bv = b[col]||'';
+    if(av < bv) return -1*dir;
+    if(av > bv) return  1*dir;
+    return 0;
+  });
+}
+
+function setFilter(f){
+  tbl.filter = f;
+  tbl.page   = 1;
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  const map = {'Todos':'.all','Crítico':'.crit','Vulnerable':'.vuln','Leal':'.leal'};
+  const el = document.querySelector('.filter-btn'+map[f]);
+  if(el) el.classList.add('active');
+  const lbl = document.getElementById('presc-lbl');
+  if(lbl) lbl.textContent = f === 'Todos'
+    ? 'PRESCRIPCIÓN INDIVIDUAL — TODOS LOS SEGMENTOS'
+    : 'PRESCRIPCIÓN INDIVIDUAL — SEGMENTO ' + f.toUpperCase();
+  buildTopTable();
+}
+
+function onSearch(){
+  const inp = document.getElementById('tbl-search');
+  tbl.search = inp ? inp.value : '';
+  tbl.page   = 1;
+  buildTopTable();
+}
+
+function sortTable(col){
+  if(tbl.sortCol === col){
+    tbl.sortDir = tbl.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    tbl.sortCol = col;
+    tbl.sortDir = 'desc';
+  }
+  tbl.page = 1;
+  buildTopTable();
+}
+
+function setPageSize(){
+  const sel = document.getElementById('rows-per-page');
+  tbl.pageSize = sel ? parseInt(sel.value) : 10;
+  tbl.page = 1;
+  buildTopTable();
+}
+
+function goPage(p){
+  tbl.page = p;
+  buildTopTable();
+}
+
+function buildTopTable(){
+  const filtered = getFilteredRows();
+  const sorted   = getSortedRows(filtered);
+  const total    = sorted.length;
+  const pages    = Math.max(1, Math.ceil(total / tbl.pageSize));
+  if(tbl.page > pages) tbl.page = pages;
+  const start    = (tbl.page - 1) * tbl.pageSize;
+  const slice    = sorted.slice(start, start + tbl.pageSize);
+
+  const body = document.getElementById('top-table-body');
+  if(!body) return;
+
+  if(slice.length === 0){
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;font-style:italic;">Sin resultados para este filtro.</td></tr>`;
+  } else {
+    body.innerHTML = slice.map(r => {
+      const p   = parseFloat(r['P_Churn'])||0;
+      const seg = (r['Segmento']||'').trim();
+      const isCrit = seg==='Riesgo Crítico'||seg==='Riesgo Critico';
+      const pill = isCrit
+        ? '<span class="seg-pill sc">Crítico</span>'
+        : seg==='Vulnerable'
+        ? '<span class="seg-pill sv">Vulnerable</span>'
+        : '<span class="seg-pill sl">Leal</span>';
+      const pColor = p >= 0.70 ? '#B72B2B' : p >= 0.10 ? '#B05000' : p >= 0.04 ? '#7A6000' : '#1B7A3E';
+      const accion = actionMap(seg, p);
+      return `<tr>
+        <td title="${r['CustomerID']||''}">${r['CustomerID']||'—'}</td>
+        <td style="font-weight:700;color:${pColor};">${fmtPd(p)}</td>
+        <td>${pill}</td>
+        <td>${fmt$(parseFloat(r['Gasto_Mensual'])||0)}</td>
+        <td style="font-weight:700;color:#B05000;">${fmt$(parseFloat(r['RaR_Cliente'])||0)}</td>
+        <td>${fmt$(parseFloat(r['LTV_VPN'])||0)}</td>
+        <td style="font-size:10px;color:#555;" title="${accion}">${accion}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  const info = document.getElementById('pager-info');
+  if(info) info.textContent = total > 0
+    ? `${start+1}–${Math.min(start+tbl.pageSize, total)} de ${fmtN(total)} Filas`
+    : '0 Filas';
+
+  const btns = document.getElementById('pager-btns');
+  if(!btns) return;
+  const range = 2;
+  let html = `<button class="pg-btn" onclick="goPage(${tbl.page-1})" ${tbl.page<=1?'disabled':''}>&#8249; Ant.</button>`;
+  for(let i=1; i<=pages; i++){
+    if(i===1 || i===pages || (i>=tbl.page-range && i<=tbl.page+range)){
+      html += `<button class="pg-btn${i===tbl.page?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if(i===tbl.page-range-1 || i===tbl.page+range+1){
+      html += `<span style="padding:0 3px;color:#aaa;font-size:11px;">…</span>`;
+    }
+  }
+  html += `<button class="pg-btn" onclick="goPage(${tbl.page+1})" ${tbl.page>=pages?'disabled':''}>Sig. &#8250;</button>`;
+  btns.innerHTML = html;
+
+  const sub = document.getElementById('table-subtitle');
+  if(sub) sub.textContent = `${fmtN(total)} registros · ordenado por ${tbl.sortCol} ${tbl.sortDir}`;
+}
+
+// ── Exportar CSV ──
+function exportCSV(){
+  const rows = getSortedRows(getFilteredRows());
+  const cols = ['CustomerID','P_Churn','Segmento','Gasto_Mensual','RaR_Cliente','LTV_VPN'];
+  const header = cols.join(',');
+  const body = rows.map(r => cols.map(c => '"'+(r[c]||'')+'"').join(',')).join('\n');
+  const blob = new Blob([header+'\n'+body], {type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'churn_grupo4_'+tbl.filter+'.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Modo oscuro ──
+function toggleDark(){
+  document.body.classList.toggle('dark-mode');
+}
+
+function renderDashboard(){
+  const kp = computeKPIs(allRows);
+  const now = new Date().toLocaleString('es-HN');
+  document.getElementById('footer-ts').textContent = 'Actualizado: ' + now;
+  document.getElementById('status-lbl').textContent = 'En línea · ' + fmtN(kp.n) + ' registros';
+
+  const churnDisplay = kp.churnRealPct !== null ? fmtP(kp.churnRealPct) : fmtP(kp.pMean) + ' *';
+  const churnSub = kp.churnRealPct !== null ? 'Tasa real observada' : '* Prob. media (sin target)';
+
+  const html = `
+  <div class="sec-lbl">DIAGNÓSTICO DE CARTERA — KPIs EN TIEMPO REAL</div>
   <div class="kpi-grid">
-    <div class="kpi" onmouseenter="showTip(event,'Clientes Evaluados',['Total registros activos','Fuente: Google Sheets'])" onmouseleave="hideTip()">
-      <div class="kpi-lbl">Clientes Evaluados</div><div class="kpi-val">${fmtN(kp.n)}</div><div class="kpi-sub">Dataset activo</div>
-    </div>
-    <div class="kpi" onmouseenter="showTip(event,'Churn Rate',['Proporción de abandono','Umbral modelo: 0.10'])" onmouseleave="hideTip()">
-      <div class="kpi-lbl">Churn Rate</div><div class="kpi-val">${churnDisplay}</div><div class="kpi-sub">${churnSub}</div>
-    </div>
-    <div class="kpi cy" onmouseenter="showTip(event,'Revenue at Risk',['Ingreso mensual en riesgo','Suma RaR por segmento'])" onmouseleave="hideTip()">
-      <div class="kpi-lbl">Revenue at Risk</div><div class="kpi-val cy">${fmtK(kp.rar)}</div><div class="kpi-sub">Mensual · cartera completa</div>
-    </div>
-    <div class="kpi" onmouseenter="showTip(event,'LTV Total (VPN)',['Valor Presente Neto','Margen 35% · 4 años · 12%'])" onmouseleave="hideTip()">
-      <div class="kpi-lbl">LTV Total (VPN)</div><div class="kpi-val">${fmtK(kp.ltv)}</div><div class="kpi-sub">Margen 35% · 4 años · 12%</div>
-    </div>
-    <div class="kpi cy" onmouseenter="showTip(event,'P_Churn Media',['Probabilidad promedio','Modelo: HistGradientBoosting','AUC-ROC: 0.9741'])" onmouseleave="hideTip()">
-      <div class="kpi-lbl">P_Churn Media</div><div class="kpi-val cy">${kp.pMean.toFixed(4)}</div><div class="kpi-sub">Umbral óptimo: 0.10</div>
-    </div>
+    <div class="kpi"><div class="kl">CLIENTES EVALUADOS</div><div class="kv">${fmtN(kp.n)}</div><div class="ks">Dataset activo</div></div>
+    <div class="kpi"><div class="kl">CHURN RATE</div><div class="kv">${churnDisplay}</div><div class="ks">${churnSub}</div></div>
+    <div class="kpi cy"><div class="kl">REVENUE AT RISK</div><div class="kv cy">${fmt$(kp.rar)}</div><div class="ks">Mensual · cartera completa</div></div>
+    <div class="kpi"><div class="kl">LTV TOTAL (VPN)</div><div class="kv">${fmt$(kp.ltv)}</div><div class="ks">Margen 35% · 4 años · 12%</div></div>
+    <div class="kpi cy"><div class="kl">P_CHURN MEDIA</div><div class="kv cy">${kp.pMean.toFixed(4)}</div><div class="ks">Umbral óptimo: 0.10</div></div>
   </div>
 
-  <div class="sec-label">Segmentación Prescriptiva</div>
-  <div class="row2" style="margin-bottom:12px;">
+  <div class="sec-lbl">SEGMENTACIÓN PRESCRIPTIVA</div>
+  <div class="row2">
     <div class="panel">
-      <div class="ph">Distribución por Segmento <span class="ph-sub">Umbrales empíricos · Fase VII</span></div>
+      <div class="ph">Distribución por Segmento <span>Umbrales empíricos · Fase VII</span></div>
       <div class="pb">
-        <div class="seg-row" onmouseenter="showTip(event,'Riesgo Crítico',['P_Churn ≥ 0.10','Clientes: ${fmtN(kp.segs.critico)}','${fmtP(kp.segs.critico/kp.n)} de cartera','RaR: ${fmtK(kp.segRar.critico)}','LTV total: ${fmtK(kp.segLtv.critico)}'])" onmouseleave="hideTip()">
-          <div class="seg-num">${fmtN(kp.segs.critico)}</div>
-          <div class="seg-info"><div class="seg-name"><span class="pill pill-cr">Riesgo Crítico</span></div><div class="seg-pct">P_Churn ≥ 0.10 · ${fmtP(kp.segs.critico/kp.n)} de cartera</div></div>
-          <div class="seg-rar">${fmtK(kp.segRar.critico)}</div>
+        <div class="seg-row">
+          <div class="sn">${fmtN(kp.segs.critico)}</div>
+          <div class="si"><div class="sname"><span class="seg-pill sc">Riesgo Crítico</span></div><div class="spct">P_Churn ≥ 0.10 · ${fmtP(kp.segs.critico/kp.n)} de cartera</div></div>
+          <div class="srar">${fmt$(kp.segRar.critico)}</div>
         </div>
-        <div class="seg-row" onmouseenter="showTip(event,'Vulnerable',['0.04 ≤ P_Churn < 0.10','Clientes: ${fmtN(kp.segs.vulnerable)}','${fmtP(kp.segs.vulnerable/kp.n)} de cartera','RaR: ${fmtK(kp.segRar.vulnerable)}','LTV total: ${fmtK(kp.segLtv.vulnerable)}'])" onmouseleave="hideTip()">
-          <div class="seg-num">${fmtN(kp.segs.vulnerable)}</div>
-          <div class="seg-info"><div class="seg-name"><span class="pill pill-vl">Vulnerable</span></div><div class="seg-pct">0.04 ≤ P_Churn &lt; 0.10 · ${fmtP(kp.segs.vulnerable/kp.n)} de cartera</div></div>
-          <div class="seg-rar">${fmtK(kp.segRar.vulnerable)}</div>
+        <div class="seg-row">
+          <div class="sn">${fmtN(kp.segs.vulnerable)}</div>
+          <div class="si"><div class="sname"><span class="seg-pill sv">Vulnerable</span></div><div class="spct">0.04 ≤ P_Churn &lt; 0.10 · ${fmtP(kp.segs.vulnerable/kp.n)} de cartera</div></div>
+          <div class="srar">${fmt$(kp.segRar.vulnerable)}</div>
         </div>
-        <div class="seg-row" onmouseenter="showTip(event,'Leal',['P_Churn < 0.04','Clientes: ${fmtN(kp.segs.leal)}','${fmtP(kp.segs.leal/kp.n)} de cartera','RaR: ${fmtK(kp.segRar.leal)}','LTV total: ${fmtK(kp.segLtv.leal)}'])" onmouseleave="hideTip()">
-          <div class="seg-num">${fmtN(kp.segs.leal)}</div>
-          <div class="seg-info"><div class="seg-name"><span class="pill pill-ly">Leal</span></div><div class="seg-pct">P_Churn &lt; 0.04 · ${fmtP(kp.segs.leal/kp.n)} de cartera</div></div>
-          <div class="seg-rar">${fmtK(kp.segRar.leal)}</div>
+        <div class="seg-row" style="border-bottom:none;margin-bottom:0;padding-bottom:0;">
+          <div class="sn">${fmtN(kp.segs.leal)}</div>
+          <div class="si"><div class="sname"><span class="seg-pill sl">Leal</span></div><div class="spct">P_Churn &lt; 0.04 · ${fmtP(kp.segs.leal/kp.n)} de cartera</div></div>
+          <div class="srar">${fmt$(kp.segRar.leal)}</div>
         </div>
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #EEF3FA;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div style="text-align:center;"><div style="font-size:9px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">LTV Crítico</div><div style="font-size:13px;font-weight:700;color:var(--unitec);font-family:var(--mono);">${fmtK(kp.segLtv.critico)}</div></div>
-          <div style="text-align:center;"><div style="font-size:9px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">LTV Vulnerable</div><div style="font-size:13px;font-weight:700;color:#007A7A;font-family:var(--mono);">${fmtK(kp.segLtv.vulnerable)}</div></div>
-          <div style="text-align:center;"><div style="font-size:9px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">LTV Leal</div><div style="font-size:13px;font-weight:700;color:${LEAL_C};font-family:var(--mono);">${fmtK(kp.segLtv.leal)}</div></div>
+        <div style="margin-top:12px;border-top:.5px solid #EEF2F8;padding-top:8px;display:flex;gap:16px;">
+          <div><div style="font-size:10px;color:#888;">LTV Riesgo Crítico</div><div style="font-size:13px;font-weight:700;color:#002D72;">${fmt$(kp.segLtv.critico)}</div></div>
+          <div><div style="font-size:10px;color:#888;">LTV Vulnerable</div><div style="font-size:13px;font-weight:700;color:#007A7A;">${fmt$(kp.segLtv.vulnerable)}</div></div>
+          <div><div style="font-size:10px;color:#888;">LTV Leal</div><div style="font-size:13px;font-weight:700;color:#7FA8D4;">${fmt$(kp.segLtv.leal)}</div></div>
         </div>
       </div>
     </div>
     <div class="panel">
-      <div class="ph">Distribución de P_Churn <span class="ph-sub">Histograma · 20 bins · Umbrales Fase VII</span></div>
-      <div class="pb">
-        <div class="hist-wrap"><canvas id="hist-chart" role="img" aria-label="Histograma de probabilidades de churn"></canvas></div>
-        <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;">
-          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:10px;height:10px;background:${LEAL_C};border-radius:2px;display:inline-block;"></span>Leal (&lt;0.04)</span>
-          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:10px;height:10px;background:${CYAN2};border-radius:2px;display:inline-block;"></span>Vulnerable (0.04–0.10)</span>
-          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:10px;height:10px;background:${UNITEC};border-radius:2px;display:inline-block;"></span>Riesgo Crítico (&gt;0.10)</span>
+      <div class="ph">Distribución de P_Churn <span>Histograma · 20 bins · Umbrales Fase VII</span></div>
+      <div class="pb" style="padding-bottom:8px;">
+        <div style="position:relative;width:100%;height:160px;">
+          <canvas id="hist-chart" role="img" aria-label="Histograma de probabilidades de churn">Distribución de probabilidades de churn.</canvas>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#888;">
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;background:#7FA8D4;border-radius:2px;display:inline-block;"></span>Leal (&lt;0.04)</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;background:#00AAAA;border-radius:2px;display:inline-block;"></span>Vulnerable (0.04–0.10)</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;background:#002D72;border-radius:2px;display:inline-block;"></span>Riesgo Crítico (&gt;0.10)</span>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="sec-label">Prescripción Individual — Top Riesgo Crítico</div>
+  <div class="sec-lbl" id="presc-lbl">PRESCRIPCIÓN INDIVIDUAL — TODOS LOS SEGMENTOS</div>
   <div class="panel" style="margin-bottom:12px;">
-    <div class="ph">Clientes con Mayor Revenue at Risk <span class="ph-sub">Columnas ordenables · Hover para detalle · Paginación dinámica</span></div>
+    <div class="ph">Clientes con Mayor Revenue at Risk <span id="table-subtitle">Columnas ordenables · Hover para detalle · Paginación dinámica</span></div>
+    <div class="filter-bar">
+      <div class="seg-filters">
+        <label>SEGMENTO</label>
+        <button class="filter-btn all active" onclick="setFilter('Todos')">Todos</button>
+        <button class="filter-btn crit" onclick="setFilter('Crítico')">&#9679; Crítico</button>
+        <button class="filter-btn vuln" onclick="setFilter('Vulnerable')">&#9679; Vulnerable</button>
+        <button class="filter-btn leal" onclick="setFilter('Leal')">&#9679; Leal</button>
+      </div>
+      <div class="search-box">
+        <label>BUSCAR</label>
+        <input class="search-input" id="tbl-search" type="text" placeholder="CustomerID o Acción..." oninput="onSearch()">
+      </div>
+    </div>
     <div style="overflow-x:auto;">
       <table class="tbl">
         <thead><tr>
-          <th data-sort="CustomerID" onclick="setSort('CustomerID')">CustomerID</th>
-          <th data-sort="P_Churn" onclick="setSort('P_Churn')">P_Churn</th>
-          <th>Segmento</th>
-          <th data-sort="Gasto_Mensual" onclick="setSort('Gasto_Mensual')">Gasto Mensual</th>
-          <th data-sort="RaR_Cliente" onclick="setSort('RaR_Cliente')">RaR Cliente</th>
-          <th data-sort="LTV_VPN" onclick="setSort('LTV_VPN')">LTV (VPN)</th>
-          <th>Acción Recomendada</th>
+          <th style="width:105px;" onclick="sortTable('CustomerID')">CustomerID <span class="sort-icon"></span></th>
+          <th style="width:75px;" onclick="sortTable('P_Churn')">P_Churn <span class="sort-icon"></span></th>
+          <th style="width:105px;">Segmento</th>
+          <th style="width:100px;" onclick="sortTable('Gasto_Mensual')">Gasto Mensual <span class="sort-icon"></span></th>
+          <th style="width:100px;" onclick="sortTable('RaR_Cliente')">RaR Cliente <span class="sort-icon"></span></th>
+          <th style="width:100px;" onclick="sortTable('LTV_VPN')">LTV (VPN) <span class="sort-icon"></span></th>
+          <th style="width:160px;">Acción Recomendada</th>
         </tr></thead>
-        <tbody id="tbl-body"></tbody>
+        <tbody id="top-table-body"></tbody>
       </table>
     </div>
-    <div class="pagination" id="pagination"></div>
+    <div class="pager">
+      <div id="pager-info" style="color:#666;">—</div>
+      <div class="pager-btns" id="pager-btns"></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:10px;color:#888;">Filas</span>
+        <select class="pg-select" id="rows-per-page" onchange="setPageSize()">
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
   </div>
 
-  <div class="sec-label">Análisis Financiero — Revenue at Risk y LTV por Segmento</div>
+  <div class="sec-lbl">ANÁLISIS FINANCIERO — RaR Y LTV POR SEGMENTO</div>
   <div class="row3">
     <div class="panel">
-      <div class="ph">Revenue at Risk por Segmento <span class="ph-sub">Barras horizontales · Valor mensual total ($)</span></div>
-      <div class="pb">
-        <div class="hbar-chart">${mkBar(rarBarsData,rarMax,fmtK)}</div>
-        <div style="margin-top:12px;padding-top:8px;border-top:1px solid #EEF3FA;display:flex;justify-content:space-between;align-items:baseline;">
-          <span style="font-size:10px;color:var(--text-muted);font-weight:600;">RaR Total Cartera</span>
-          <span style="font-size:15px;font-weight:700;color:var(--unitec);font-family:var(--mono);">${fmtK(kp.rar)}</span>
-        </div>
-      </div>
+      <div class="ph">Revenue at Risk por Segmento <span>Barras horizontales</span></div>
+      <div class="pb"><div style="position:relative;width:100%;height:120px;"><canvas id="rar-chart" role="img" aria-label="Revenue at Risk por segmento">RaR por segmento.</canvas></div></div>
     </div>
     <div class="panel">
-      <div class="ph">LTV Promedio por Segmento <span class="ph-sub">Valor presente neto · Margen 35% · Vida 4 años · Tasa 12%</span></div>
-      <div class="pb">
-        <div class="hbar-chart">${mkBar(ltvBarsData,ltvMax,fmt$)}</div>
-        <div style="margin-top:12px;padding-top:8px;border-top:1px solid #EEF3FA;display:flex;justify-content:space-between;align-items:baseline;">
-          <span style="font-size:10px;color:var(--text-muted);font-weight:600;">LTV Total Cartera (VPN)</span>
-          <span style="font-size:15px;font-weight:700;color:var(--unitec);font-family:var(--mono);">${fmtK(kp.ltv)}</span>
-        </div>
-      </div>
+      <div class="ph">LTV Promedio por Segmento <span>Valor presente neto</span></div>
+      <div class="pb"><div style="position:relative;width:100%;height:120px;"><canvas id="ltv-chart" role="img" aria-label="LTV promedio por segmento">LTV por segmento.</canvas></div></div>
     </div>
-  </div>`;
+  </div>
+  `;
 
-  buildHistogram(kp.pVals);
-  renderTable();
+  document.getElementById('main-content').innerHTML = html;
+  buildHistogram(kp.pChurnVals);
+  buildRaRChart(kp);
+  buildLTVChart(kp);
+  buildTopTable();
 }
 
-// Histogram
-function buildHistogram(vals) {
-  const BINS=20;
-  const counts=new Array(BINS).fill(0);
-  vals.forEach(v=>{const b=Math.min(Math.floor(v*BINS),BINS-1);counts[b]++;});
-  const labels=Array.from({length:BINS},(_,i)=>(i/BINS).toFixed(2));
-  const colors=counts.map((_,i)=>{const mid=(i+0.5)/BINS;return mid<0.0412?LEAL_C:mid<0.10?CYAN2:UNITEC;});
-  const umbralPlugin={
-    id:'umbrales',
-    afterDraw(chart){
-      const{ctx,chartArea:{left,right,top,bottom},scales:{x}}=chart;
-      const drawLine=(val,color,label)=>{
-        const xPx=x.getPixelForValue(val*BINS);
-        ctx.save();ctx.beginPath();ctx.setLineDash([4,3]);ctx.strokeStyle=color;ctx.lineWidth=1.5;
-        ctx.moveTo(xPx,top);ctx.lineTo(xPx,bottom);ctx.stroke();ctx.setLineDash([]);
-        ctx.fillStyle=color;ctx.font='700 9px IBM Plex Mono, monospace';ctx.textAlign='center';
-        ctx.fillText(label,xPx,top-4);ctx.restore();
-      };
-      drawLine(0.0412,CYAN2,'0.04');
-      drawLine(0.10,'#B72B2B','0.10');
-    }
-  };
+function buildHistogram(vals){
+  const bins = 20;
+  const counts = new Array(bins).fill(0);
+  vals.forEach(v => { const b = Math.min(Math.floor(v*bins), bins-1); counts[b]++; });
+  const labels = Array.from({length:bins}, (_,i) => (i/bins).toFixed(2));
+  const colors = counts.map((_,i) => {
+    const mid = (i+0.5)/bins;
+    if(mid < 0.0412) return '#7FA8D4';
+    if(mid < 0.10)   return '#00AAAA';
+    return '#002D72';
+  });
   if(charts.hist) charts.hist.destroy();
-  charts.hist=new Chart(document.getElementById('hist-chart'),{
+  charts.hist = new Chart(document.getElementById('hist-chart'), {
     type:'bar',
-    data:{labels,datasets:[{data:counts,backgroundColor:colors,borderWidth:0,borderRadius:2}]},
-    plugins:[umbralPlugin],
+    data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:0 }] },
     options:{
-      responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>`P_Churn: ${ctx[0].label} – ${(parseFloat(ctx[0].label)+0.05).toFixed(2)}`,label:ctx=>` ${fmtN(ctx.raw)} clientes`}}},
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
       scales:{
-        x:{grid:{display:false},border:{display:false},ticks:{maxTicksLimit:6,font:{size:10,family:'IBM Plex Mono'},color:'#667799'}},
-        y:{grid:{display:false},border:{display:false},ticks:{font:{size:10,family:'IBM Plex Mono'},color:'#667799',callback:v=>fmtN(v)}}
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:6, font:{size:10}, color:'#888'} },
+        y:{ grid:{display:false}, ticks:{font:{size:10}, color:'#888'} }
       }
     }
   });
 }
 
-function rebuildHistogram(){
-  if(!filteredRows.length) return;
-  buildHistogram(filteredRows.map(r=>parseFloat(r['P_Churn'])||0));
+function buildRaRChart(kp){
+  if(charts.rar) charts.rar.destroy();
+  charts.rar = new Chart(document.getElementById('rar-chart'), {
+    type:'bar',
+    data:{ labels:['Riesgo Crítico','Vulnerable','Leal'],
+      datasets:[{ data:[kp.segRar.critico, kp.segRar.vulnerable, kp.segRar.leal],
+        backgroundColor:['#002D72','#00AAAA','#7FA8D4'], borderWidth:0 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt$(ctx.raw) } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{ callback: v => '$'+Math.round(v/1000)+'K', font:{size:10}, color:'#888' } },
+        y:{ grid:{display:false}, ticks:{ font:{size:10,weight:'bold'}, color:'#333' } }
+      }
+    }
+  });
+}
+
+function buildLTVChart(kp){
+  const ltvMean = {
+    critico:    kp.segs.critico>0    ? kp.segLtv.critico/kp.segs.critico       : 0,
+    vulnerable: kp.segs.vulnerable>0 ? kp.segLtv.vulnerable/kp.segs.vulnerable : 0,
+    leal:       kp.segs.leal>0       ? kp.segLtv.leal/kp.segs.leal             : 0,
+  };
+  if(charts.ltv) charts.ltv.destroy();
+  charts.ltv = new Chart(document.getElementById('ltv-chart'), {
+    type:'bar',
+    data:{ labels:['Riesgo Crítico','Vulnerable','Leal'],
+      datasets:[{ data:[ltvMean.critico, ltvMean.vulnerable, ltvMean.leal],
+        backgroundColor:['#002D72','#00AAAA','#7FA8D4'], borderWidth:0 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt$(ctx.raw) } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{ callback: v => '$'+Math.round(v), font:{size:10}, color:'#888' } },
+        y:{ grid:{display:false}, ticks:{ font:{size:10}, color:'#333' } }
+      }
+    }
+  });
 }
 
 loadData();
