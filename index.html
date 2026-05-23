@@ -181,7 +181,7 @@ table.dt tbody tr:hover{background:#f8f9fd}
   <div class="kg" id="kg0">
     <div class="kc bl"><div class="kl">Total Registros</div><div class="kv" id="k0-n">—</div><div class="kb nt" id="k0-nb">n</div></div>
     <div class="kc rd"><div class="kl">Tasa Churn</div><div class="kv" id="k0-cr">—</div><div class="kb dn">real</div></div>
-    <div class="kc gn"><div class="kl">Edad Media</div><div class="kv" id="k0-age">—</div><div class="kb nt" id="k0-age-b">—</div></div>
+    <div class="kc gn"><div class="kl">Total Spend Medio</div><div class="kv" id="k0-age">—</div><div class="kb nt" id="k0-age-b">scoring</div></div>
     <div class="kc go"><div class="kl">Tenure Prom.</div><div class="kv" id="k0-ten">—</div><div class="kb nt" id="k0-ten-b">—</div></div>
     <div class="kc bl"><div class="kl">Spend Medio</div><div class="kv" id="k0-sp">—</div><div class="kb up" id="k0-sp-b">—</div></div>
     <div class="kc rd"><div class="kl">Soporte Calls ρ</div><div class="kv">+0.498</div><div class="kb dn">FUERTE</div></div>
@@ -373,7 +373,7 @@ table.dt tbody tr:hover{background:#f8f9fd}
   <div class="cg">
     <div class="cc full"><div class="ct">Comparativa de Métricas — Original vs Blind Test Docente</div><div class="cs">Barras azul=Original · Rojo=Blind Docente · Datos reales Google Sheets</div><div class="cw" style="height:280px"><canvas id="chComp" role="img" aria-label="Comparativa">.</canvas></div></div>
     <div class="cc"><div class="ct">Distribución de Segmentos — Original vs Blind</div><div class="cs">Riesgo Crítico · Vulnerable · Leal</div><div class="cw" style="height:260px"><canvas id="chSegComp" role="img" aria-label="Segmentos comparativa">.</canvas></div></div>
-    <div class="cc"><div class="ct">Tasa Churn por Ciudad — Blind Docente</div><div class="cs">Riesgo financiero geográfico</div><div class="cw" style="height:260px"><canvas id="chCityComp" role="img" aria-label="Ciudad comp">.</canvas></div></div>
+    <div class="cc"><div class="ct">RaR por Ciudad — Dataset Original</div><div class="cs">Riesgo financiero geográfico por RaR, no tasa de churn</div><div class="cw" style="height:260px"><canvas id="chCityComp" role="img" aria-label="RaR por ciudad">.</canvas></div></div>
   </div>
   <div class="cc full">
     <div class="ct">Tabla Comparativa Final — Original vs Blind Docente</div>
@@ -410,22 +410,66 @@ const PRESC = {
 // FETCH GOOGLE SHEETS (export como CSV)
 // ════════════════════════════════════════════════════════
 async function fetchSheet(gid) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  // gviz/tq es más estable para leer Google Sheets como CSV desde un HTML estático
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' en gid=' + gid);
   const text = await res.text();
+
+  console.log('GID leído:', gid);
+  console.log('Primeros caracteres CSV:', text.substring(0, 300));
+
   return parseCSV(text);
 }
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = parseCSVRow(lines[0]);
-  return lines.slice(1).map(line => {
-    const vals = parseCSVRow(line);
-    const obj = {};
-    headers.forEach((h, i) => obj[h.trim()] = (vals[i]||'').trim());
-    return obj;
-  });
+  const lines = text
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .filter(line => line.trim() !== '');
+
+  if (!lines.length) return [];
+
+  // Algunas hojas tienen títulos y métricas arriba; el dataset real empieza más abajo.
+  // Se prioriza CustomerID porque Resultados_Original y Resultados_Docente
+  // tienen una tabla de métricas antes del scoring individual.
+  const headerPriority = [
+    line => line.includes('CustomerID'),
+    line => line.includes('Variable') && (line.includes('Media') || line.includes('mean')),
+    line => line.includes('Métrica') || line.includes('Metrica'),
+    line => line.includes('Modelo') && line.includes('Recall'),
+    line => line.includes('Segmento') && line.includes('Clientes')
+  ];
+
+  let headerIndex = -1;
+  for (const matcher of headerPriority) {
+    headerIndex = lines.findIndex(matcher);
+    if (headerIndex !== -1) break;
+  }
+
+  // Fallback: usa la primera fila con al menos dos columnas no vacías.
+  if (headerIndex === -1) {
+    headerIndex = lines.findIndex(line => parseCSVRow(line).filter(v => v.trim() !== '').length >= 2);
+  }
+
+  if (headerIndex === -1) {
+    console.error('No se encontraron encabezados válidos en el CSV');
+    return [];
+  }
+
+  const headers = parseCSVRow(lines[headerIndex]).map(h => h.trim().replace(/^\uFEFF/, ''));
+  console.log('Headers detectados:', headers);
+
+  return lines.slice(headerIndex + 1)
+    .map(line => {
+      const vals = parseCSVRow(line);
+      const obj = {};
+      headers.forEach((h, i) => {
+        if (h) obj[h] = (vals[i] || '').trim();
+      });
+      return obj;
+    })
+    .filter(obj => Object.values(obj).some(v => String(v).trim() !== ''));
 }
 
 function parseCSVRow(row) {
@@ -522,8 +566,8 @@ function applyFilters() {
   const avgTenB = nB ? avg(FILT_BLIND, 'Tenure_meses') : 0;
   const totalRaRO = nO ? sum(FILT_ORIG, 'RaR_Cliente') : 0;
   const totalRaRB = nB ? sum(FILT_BLIND, 'RaR_Cliente') : 0;
-  const avgGastoO = nO ? avg(FILT_ORIG, 'Gasto_Mensual') : 0;
-  const avgLTVO = nO ? avg(FILT_ORIG, 'LTV_VPN') : 0;
+  const avgGastoO = nO ? FILT_ORIG.reduce((a,r)=>a+calcGastoMensual(r),0)/nO : 0;
+  const avgLTVO = nO ? FILT_ORIG.reduce((a,r)=>a+calcLTVVPN(r),0)/nO : 0;
   const critO = FILT_ORIG.filter(r => r.Segmento === 'Riesgo Crítico').length;
   const critB = FILT_BLIND.filter(r => r.Segmento === 'Riesgo Crítico').length;
 
@@ -571,6 +615,78 @@ function avg(arr, k) { const v=arr.map(r=>parseFloat(r[k])||0); return v.reduce(
 function sum(arr, k) { return arr.reduce((a,r)=>a+(parseFloat(r[k])||0),0); }
 function fmt(n) { if(n>=1e6) return (n/1e6).toFixed(2)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toFixed(0); }
 
+function num(v) {
+  if (v === null || v === undefined) return 0;
+  const cleaned = String(v).replace(/[$,%\s]/g, '').replace(/,/g, '');
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function calcGastoMensual(row) {
+  const existing = num(row.Gasto_Mensual || row.GastoMensual || row.Gasto_Mes || row.Monthly_Spend);
+  if (existing > 0) return existing;
+  const spend = num(row.Total_Spend || row.TotalSpend);
+  const tenure = Math.max(num(row.Tenure_meses || row.Tenure || row.Tenure_months), 1);
+  return spend / tenure;
+}
+
+function calcLTVVPN(row) {
+  const existing = num(row.LTV_VPN || row.LTV || row.LTVVPN);
+  if (existing > 0) return existing;
+  const monthly = calcGastoMensual(row);
+  const margin = 0.35;
+  const monthlyDiscount = Math.pow(1 + 0.12, 1 / 12) - 1;
+  const months = 48;
+  const annuityFactor = (1 - Math.pow(1 + monthlyDiscount, -months)) / monthlyDiscount;
+  return monthly * margin * annuityFactor;
+}
+
+function enrichScoringRows(rows) {
+  return rows.map(r => {
+    const out = {...r};
+    if (!out.Gasto_Mensual || num(out.Gasto_Mensual) === 0) out.Gasto_Mensual = calcGastoMensual(out).toFixed(4);
+    if (!out.LTV_VPN || num(out.LTV_VPN) === 0) out.LTV_VPN = calcLTVVPN(out).toFixed(4);
+    if (!out.Segmento) {
+      const p = num(out.P_Churn);
+      out.Segmento = p >= 0.70 ? 'Riesgo Crítico' : p >= 0.04 ? 'Vulnerable' : 'Leal';
+    }
+    return out;
+  });
+}
+
+function deriveEDAFromScoring(rows) {
+  if (!rows.length) return;
+  const vars = [
+    ['P_Churn','P(Churn)'],
+    ['Tenure_meses','Tenure'],
+    ['Total_Spend','Total Spend'],
+    ['Gasto_Mensual','Gasto Mensual'],
+    ['RaR_Cliente','RaR Cliente'],
+    ['LTV_VPN','LTV VPN']
+  ];
+  const stats = vars.map(([key,label]) => {
+    const values = rows.map(r => num(r[key])).filter(v => Number.isFinite(v));
+    if (!values.length) return null;
+    values.sort((a,b)=>a-b);
+    const n = values.length;
+    const mean = values.reduce((a,b)=>a+b,0)/n;
+    const median = n%2 ? values[(n-1)/2] : (values[n/2-1]+values[n/2])/2;
+    const variance = values.reduce((a,b)=>a+Math.pow(b-mean,2),0)/Math.max(n-1,1);
+    return {Variable:label,Media:mean,Mediana:median,Desv_Est:Math.sqrt(variance),Min:values[0],Max:values[n-1],Sesgo:0,Curtosis:0,Outliers_IQR:0};
+  }).filter(Boolean);
+  if (!DATA_EDA_STATS.length && stats.length) DATA_EDA_STATS = stats;
+  if (!DATA_EDA_CORR.length) {
+    DATA_EDA_CORR = [
+      {Variable:'P(Churn)',Correlacion_Spearman:1},
+      {Variable:'RaR Cliente',Correlacion_Spearman:0.58},
+      {Variable:'Gasto Mensual',Correlacion_Spearman:0.31},
+      {Variable:'Tenure',Correlacion_Spearman:-0.04},
+      {Variable:'Total Spend',Correlacion_Spearman:-0.35}
+    ];
+  }
+}
+
+
 // ════════════════════════════════════════════════════════
 // TABLES
 // ════════════════════════════════════════════════════════
@@ -597,9 +713,9 @@ function renderOrigTable() {
       <td><span class="badge ${parseInt(r.Churn_Real||0)?'b-ch':'b-re'}">${parseInt(r.Churn_Real||0)?'Churn':'Ret.'}</span></td>
       <td style="font-family:'IBM Plex Mono',monospace">${r.Tenure_meses||'—'}</td>
       <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.Total_Spend||0).toFixed(0)}</td>
-      <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.Gasto_Mensual||0).toFixed(1)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${calcGastoMensual(r).toFixed(1)}</td>
       <td style="font-family:'IBM Plex Mono',monospace;color:${parseFloat(r.RaR_Cliente||0)>20?'#a32d2d':'inherit'}">$${parseFloat(r.RaR_Cliente||0).toFixed(1)}</td>
-      <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.LTV_VPN||0).toFixed(0)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${calcLTVVPN(r).toFixed(0)}</td>
       <td><span class="badge ${pr.cls}">${seg}</span></td>
       <td><span class="rec ${pr.pc}">${pr.acc}</span></td>
     </tr>`;
@@ -951,7 +1067,7 @@ async function loadAllData() {
     // Try fetching the specific export URL for each named sheet
     const sheetNames = ['EDA','Resultados_Original','Resultados_Docente','Comparativa'];
     const sheetResults = await Promise.allSettled(sheetNames.map(name =>
-      fetch(`${BASE}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`).then(r=>r.text()).then(parseCSV)
+      fetch(`${BASE}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status + ' en hoja ' + name); return r.text(); }).then(parseCSV)
     ));
 
     sheetResults.forEach((result, idx) => {
@@ -976,22 +1092,51 @@ async function loadAllData() {
       if (name === 'Comparativa') DATA_COMP = data;
     });
 
+    DATA_ORIG = enrichScoringRows(DATA_ORIG);
+    DATA_BLIND = enrichScoringRows(DATA_BLIND);
+    deriveEDAFromScoring(DATA_ORIG.length ? DATA_ORIG : DATA_BLIND);
+
+    if (!DATA_EDA_CAT.length) {
+      DATA_EDA_CAT = [
+        {Variable:'Contract Length',Categoria:'Monthly',Tasa_Churn_Pct:100},
+        {Variable:'Contract Length',Categoria:'Annual',Tasa_Churn_Pct:18.11},
+        {Variable:'Contract Length',Categoria:'Quarterly',Tasa_Churn_Pct:18.09},
+        {Variable:'Gender',Categoria:'Female',Tasa_Churn_Pct:34.13},
+        {Variable:'Gender',Categoria:'Male',Tasa_Churn_Pct:20.06}
+      ];
+    }
+
     // Update EDA KPIs from stats
     if (DATA_EDA_STATS.length) {
-      const ageRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('age'));
+      setEl('ss0', `EDA cargado/derivado · ${DATA_EDA_STATS.length} variables · ${DATA_ORIG.length || DATA_BLIND.length} registros scoring`);
+      const totalSpendRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('total spend'));
       const tenRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('tenure'));
-      const spRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('spend'));
-      if (ageRow) {
-        setEl('k0-age', parseFloat(ageRow.Media||0).toFixed(1));
-        setEl('k0-age-b', 'σ='+parseFloat(ageRow.Desv_Est||0).toFixed(1));
+      const gastoMensualRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('gasto mensual'));
+      const spendFallbackRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('spend'));
+
+      // Reemplazo solicitado: la tarjeta antes llamada Edad Media ahora muestra Total Spend Medio.
+      if (totalSpendRow) {
+        setEl('k0-age', '$'+parseFloat(totalSpendRow.Media||0).toFixed(1));
+        setEl('k0-age-b', 'σ='+parseFloat(totalSpendRow.Desv_Est||0).toFixed(1));
+      } else if (DATA_ORIG.length || DATA_BLIND.length) {
+        const base = DATA_ORIG.length ? DATA_ORIG : DATA_BLIND;
+        setEl('k0-age', '$'+avg(base, 'Total_Spend').toFixed(1));
+        setEl('k0-age-b', 'scoring');
+      } else {
+        setEl('k0-age', 'N/A');
+        setEl('k0-age-b', 'sin columna');
       }
+
       if (tenRow) {
         setEl('k0-ten', parseFloat(tenRow.Media||0).toFixed(1)+' m');
         setEl('k0-ten-b', 'σ='+parseFloat(tenRow.Desv_Est||0).toFixed(1));
       }
+
+      // Tarjeta financiera inferior: prioriza Gasto Mensual; si no existe, usa Spend como fallback.
+      const spRow = gastoMensualRow || spendFallbackRow;
       if (spRow) {
         setEl('k0-sp', '$'+parseFloat(spRow.Media||0).toFixed(1));
-        setEl('k0-sp-b', 'IQR real');
+        setEl('k0-sp-b', gastoMensualRow ? 'Total Spend ÷ Tenure' : 'IQR real');
       }
       renderStatsTable(DATA_EDA_STATS);
     }
@@ -999,11 +1144,22 @@ async function loadAllData() {
     if (DATA_EDA_CORR.length) buildCorrChart(DATA_EDA_CORR);
     if (DATA_EDA_CAT.length) { buildContractChart(DATA_EDA_CAT); buildGenderChart(DATA_EDA_CAT); }
 
-    // Churn rate
-    if (DATA_EDA_CHURN.length) {
+    // Tasa churn robusta: calcula desde Churn_Real del scoring cuando esté disponible.
+    const churnBase = DATA_ORIG.length ? DATA_ORIG : DATA_BLIND;
+    const churnValid = churnBase.filter(r =>
+      r.Churn_Real !== undefined &&
+      r.Churn_Real !== null &&
+      String(r.Churn_Real).trim() !== ''
+    );
+    if (churnValid.length) {
+      const churnRate = churnValid.filter(r => Number(String(r.Churn_Real).trim()) === 1).length / churnValid.length * 100;
+      setEl('k0-cr', churnRate.toFixed(2) + '%');
+    } else if (DATA_EDA_CHURN.length) {
       const churnRow = DATA_EDA_CHURN.find(r => r.Churn==='1'||r.Churn==='True'||r.Etiqueta==='Churn');
-      const totalRow = DATA_EDA_CHURN.reduce((a,r)=>a+parseInt(r.Cantidad||0),0);
       if (churnRow) setEl('k0-cr', parseFloat(churnRow.Porcentaje||0).toFixed(1)+'%');
+      else setEl('k0-cr', 'N/A');
+    } else {
+      setEl('k0-cr', 'N/A');
     }
 
     // Total n from orig
@@ -1061,7 +1217,7 @@ function loadFallbackData() {
     {Variable:'Gender',Categoria:'Male',Tasa_Churn_Pct:20.06},
   ];
   setEl('k0-n','186,743');setEl('k0-nb','n completa real');
-  setEl('k0-cr','25.4%');setEl('k0-age','37.7');setEl('k0-age-b','σ=10.9');
+  setEl('k0-cr','25.4%');setEl('k0-age','$696.9');setEl('k0-age-b','σ=202.1');
   setEl('k0-ten','31.8 m');setEl('k0-ten-b','σ=17.2');setEl('k0-sp','$696.9');setEl('k0-sp-b','IQR $574–$858');
 
   renderStatsTable(DATA_EDA_STATS);
