@@ -177,7 +177,7 @@ table.dt tbody tr:hover{background:#f8f9fd}
     <div><div class="st">Análisis Exploratorio de Datos</div><div class="ss" id="ss0">Cargando datos reales...</div></div>
     <button class="bex" onclick="doExport(0)">↓ Exportar PNG</button>
   </div>
-  <div class="ustrip" id="us0"><div class="spinner"></div> Cargando estadísticos desde Google Sheets...</div>
+Cargando estadísticos desde Google Sheets...</div>
   <div class="kg" id="kg0">
     <div class="kc bl"><div class="kl">Total Registros</div><div class="kv" id="k0-n">—</div><div class="kb nt" id="k0-nb">n</div></div>
     <div class="kc rd"><div class="kl">Tasa Churn</div><div class="kv" id="k0-cr">—</div><div class="kb dn">real</div></div>
@@ -196,7 +196,7 @@ table.dt tbody tr:hover{background:#f8f9fd}
   </div>
   <div class="cc full" style="margin-bottom:14px">
     <div class="ct">Estadísticos Descriptivos — Datos Reales del Proyecto</div>
-    <div class="cs">Fuente: Google Sheets · hoja EDA · 4 momentos estadísticos</div>
+    <div class="cs">Fuente: Training data-1.csv · 4 momentos estadísticos</div>
     <div class="tw" style="margin-top:10px">
       <table class="dt"><thead><tr><th>Variable</th><th>Media</th><th>Mediana</th><th>Desv.Est.</th><th>Mín</th><th>Máx</th><th>Sesgo</th><th>Curtosis</th><th>Outliers IQR</th></tr></thead>
       <tbody id="statsTbody"></tbody></table>
@@ -204,7 +204,7 @@ table.dt tbody tr:hover{background:#f8f9fd}
   </div>
   <div class="cc full">
     <div class="ct">Correlaciones Spearman con Churn — Datos Reales</div>
-    <div class="cs">Fuente: hoja EDA · ordenadas por magnitud</div>
+    <div class="cs">Fuente: Training data-1.csv · correlación Spearman con Churn</div>
     <div class="cw" style="height:240px;margin-top:8px"><canvas id="chCorr" role="img" aria-label="Correlaciones">.</canvas></div>
   </div>
 </section>
@@ -215,8 +215,7 @@ table.dt tbody tr:hover{background:#f8f9fd}
     <div><div class="st">Resultados — Dataset Original (X_test)</div><div class="ss" id="ss1">Cargando...</div></div>
     <button class="bex" onclick="doExport(1)">↓ Exportar PNG</button>
   </div>
-  <div class="ustrip"><span id="ts-orig">Cargando datos reales...</span></div>
-  <div style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Monetización — Fase VI-C · n_test=37,349 registros reales</div>
+<div style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Monetización — Fase VI-C · n_test=37,349 registros reales</div>
   <div class="finband">
     <div class="fincard f1"><div class="finlabel">Gasto Mensual Medio</div><div class="finval" id="f1-gm">—</div><div class="finsub">Total Spend ÷ Tenure</div></div>
     <div class="fincard f2"><div class="finlabel">RaR Total Mensual</div><div class="finval" id="f1-rar">—</div><div class="finsub">Cartera X_test · HGB</div></div>
@@ -498,6 +497,13 @@ let DATA_COMP = [];
 let DATA_METRICS_ORIG = [];
 let DATA_METRICS_BLIND = [];
 let DATA_SEG_ORIG = [];
+
+// EDA base cargado desde archivo: Training data-1.csv
+const TRAINING_EDA_SUMMARY = {"n": 186743, "churn_rate": 25.3921, "total_spend_mean": 696.9169, "total_spend_std": 202.1158, "tenure_mean": 31.8428, "tenure_std": 17.157, "gasto_mensual_mean": 48.1917, "gasto_mensual_std": 93.797};
+const TRAINING_EDA_STATS = [{"Variable": "Age", "Media": 37.6829, "Mediana": 38.0, "Desv_Est": 10.9021, "Min": 18.0, "Max": 65.0, "Sesgo": 0.1412, "Curtosis": -0.5805, "Outliers_IQR": 0}, {"Variable": "Tenure", "Media": 31.8428, "Mediana": 33.0, "Desv_Est": 17.157, "Min": 1.0, "Max": 60.0, "Sesgo": -0.1087, "Curtosis": -1.1749, "Outliers_IQR": 0}, {"Variable": "Usage Frequency", "Media": 16.0905, "Mediana": 16.0, "Desv_Est": 8.5087, "Min": 1.0, "Max": 30.0, "Sesgo": -0.0826, "Curtosis": -1.1434, "Outliers_IQR": 0}, {"Variable": "Support Calls", "Media": 2.4893, "Mediana": 2.0, "Desv_Est": 2.4778, "Min": 0.0, "Max": 10.0, "Sesgo": 1.3691, "Curtosis": 1.3996, "Outliers_IQR": 17970}, {"Variable": "Payment Delay", "Media": 11.3381, "Mediana": 11.0, "Desv_Est": 7.2741, "Min": 0.0, "Max": 30.0, "Sesgo": 0.353, "Curtosis": -0.5549, "Outliers_IQR": 0}, {"Variable": "Total Spend", "Media": 696.9169, "Mediana": 716.5, "Desv_Est": 202.1158, "Min": 100.0, "Max": 1000.0, "Sesgo": -0.74, "Curtosis": 0.2351, "Outliers_IQR": 2673}, {"Variable": "Last Interaction", "Media": 13.6573, "Mediana": 13.0, "Desv_Est": 8.4586, "Min": 1.0, "Max": 30.0, "Sesgo": 0.3219, "Curtosis": -1.037, "Outliers_IQR": 0}, {"Variable": "Churn", "Media": 0.2539, "Mediana": 0.0, "Desv_Est": 0.4353, "Min": 0.0, "Max": 1.0, "Sesgo": 1.1307, "Curtosis": -0.7214, "Outliers_IQR": 0}, {"Variable": "Gasto Mensual", "Media": 48.1917, "Mediana": 21.44, "Desv_Est": 93.797, "Min": 1.6833, "Max": 1000.0, "Sesgo": 5.9197, "Curtosis": 42.7357, "Outliers_IQR": 23508}];
+const TRAINING_EDA_CORR = [{"Variable": "Support Calls", "Correlacion_Spearman": 0.4977}, {"Variable": "Total Spend", "Correlacion_Spearman": -0.3506}, {"Variable": "Payment Delay", "Correlacion_Spearman": 0.2545}, {"Variable": "Age", "Correlacion_Spearman": 0.1761}, {"Variable": "Last Interaction", "Correlacion_Spearman": 0.131}, {"Variable": "Tenure", "Correlacion_Spearman": -0.0425}, {"Variable": "Usage Frequency", "Correlacion_Spearman": -0.0372}];
+const TRAINING_EDA_CAT = [{"Variable": "Contract Length", "Categoria": "Monthly", "Tasa_Churn_Pct": 100.0}, {"Variable": "Contract Length", "Categoria": "Annual", "Tasa_Churn_Pct": 18.1083}, {"Variable": "Contract Length", "Categoria": "Quarterly", "Tasa_Churn_Pct": 18.0936}, {"Variable": "Gender", "Categoria": "Female", "Tasa_Churn_Pct": 34.1342}, {"Variable": "Gender", "Categoria": "Male", "Tasa_Churn_Pct": 20.0638}, {"Variable": "Subscription Type", "Categoria": "Basic", "Tasa_Churn_Pct": 26.5531}, {"Variable": "Subscription Type", "Categoria": "Standard", "Tasa_Churn_Pct": 24.8762}, {"Variable": "Subscription Type", "Categoria": "Premium", "Tasa_Churn_Pct": 24.8194}];
+const TRAINING_EDA_SUPPORT = [{"Support_Calls": 0, "Tasa_Churn_Pct": 10.0793}, {"Support_Calls": 1, "Tasa_Churn_Pct": 9.9635}, {"Support_Calls": 2, "Tasa_Churn_Pct": 10.633}, {"Support_Calls": 3, "Tasa_Churn_Pct": 15.4812}, {"Support_Calls": 4, "Tasa_Churn_Pct": 26.8934}, {"Support_Calls": 5, "Tasa_Churn_Pct": 82.5567}, {"Support_Calls": 6, "Tasa_Churn_Pct": 100.0}, {"Support_Calls": 7, "Tasa_Churn_Pct": 100.0}, {"Support_Calls": 8, "Tasa_Churn_Pct": 100.0}, {"Support_Calls": 9, "Tasa_Churn_Pct": 100.0}, {"Support_Calls": 10, "Tasa_Churn_Pct": 100.0}];
 
 let FILT_ORIG = [];
 let FILT_BLIND = [];
@@ -786,8 +792,8 @@ function buildStaticCharts() {
   // Support Calls vs Churn (real data from EDA)
   if(CHARTS.chSupp) CHARTS.chSupp.destroy();
   CHARTS.chSupp=new Chart(document.getElementById('chSupp'),{type:'line',data:{
-    labels:['0','1','2','3','4','5','6','7','8','9','10'],
-    datasets:[{label:'Tasa Churn %',data:[2.1,4.8,9.2,18.5,34.2,54.3,72.8,89.1,95.4,98.2,99.7],
+    labels:TRAINING_EDA_SUPPORT.map(r => String(r.Support_Calls)),
+    datasets:[{label:'Tasa Churn %',data:TRAINING_EDA_SUPPORT.map(r => r.Tasa_Churn_Pct),
       borderColor:CAC,backgroundColor:'rgba(200,16,46,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:CAC}]
   },options:{responsive:true,maintainAspectRatio:false,
     scales:{x:{grid:{display:false},title:{display:true,text:'Support Calls',font:{size:10}}},y:{grid:{display:false},max:105,ticks:{callback:v=>v+'%'}}},
@@ -1011,7 +1017,12 @@ setInterval(updateTS, 15000);
 // ════════════════════════════════════════════════════════
 async function loadAllData() {
   try {
-    setEl('us0', '⟳ Cargando EDA desde Google Sheets...');
+    setEl('us0', '⟳ Cargando EDA desde Training data-1.csv y scoring desde Google Sheets...');
+
+    // EDA fijo desde Training data-1.csv; las demás pestañas conservan Google Sheets.
+    DATA_EDA_STATS = [...TRAINING_EDA_STATS];
+    DATA_EDA_CORR = [...TRAINING_EDA_CORR];
+    DATA_EDA_CAT = [...TRAINING_EDA_CAT];
 
     // GIDs from the spreadsheet (we try common GIDs)
     // Sheet structure: EDA, Resultados_Original, Resultados_Docente, Comparativa
@@ -1076,7 +1087,7 @@ async function loadAllData() {
       const keys = Object.keys(data[0]).join(',').toLowerCase();
       const name = sheetNames[idx];
 
-      if (name === 'EDA') {
+      if (false && name === 'EDA') {
         // Multiple tables in EDA — identify by columns
         const statsRows = data.filter(r => r.Variable && r.Media !== undefined);
         const corrRows = data.filter(r => r.Correlacion_Spearman !== undefined);
@@ -1106,74 +1117,28 @@ async function loadAllData() {
       ];
     }
 
-    // Update EDA KPIs from stats
-    if (DATA_EDA_STATS.length) {
-      setEl('ss0', `EDA cargado/derivado · ${DATA_EDA_STATS.length} variables · ${DATA_ORIG.length || DATA_BLIND.length} registros scoring`);
-      const totalSpendRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('total spend'));
-      const tenRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('tenure'));
-      const gastoMensualRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('gasto mensual'));
-      const spendFallbackRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('spend'));
-
-      // Reemplazo solicitado: la tarjeta antes llamada Edad Media ahora muestra Total Spend Medio.
-      if (totalSpendRow) {
-        setEl('k0-age', '$'+parseFloat(totalSpendRow.Media||0).toFixed(1));
-        setEl('k0-age-b', 'σ='+parseFloat(totalSpendRow.Desv_Est||0).toFixed(1));
-      } else if (DATA_ORIG.length || DATA_BLIND.length) {
-        const base = DATA_ORIG.length ? DATA_ORIG : DATA_BLIND;
-        setEl('k0-age', '$'+avg(base, 'Total_Spend').toFixed(1));
-        setEl('k0-age-b', 'scoring');
-      } else {
-        setEl('k0-age', 'N/A');
-        setEl('k0-age-b', 'sin columna');
-      }
-
-      if (tenRow) {
-        setEl('k0-ten', parseFloat(tenRow.Media||0).toFixed(1)+' m');
-        setEl('k0-ten-b', 'σ='+parseFloat(tenRow.Desv_Est||0).toFixed(1));
-      }
-
-      // Tarjeta financiera inferior: prioriza Gasto Mensual; si no existe, usa Spend como fallback.
-      const spRow = gastoMensualRow || spendFallbackRow;
-      if (spRow) {
-        setEl('k0-sp', '$'+parseFloat(spRow.Media||0).toFixed(1));
-        setEl('k0-sp-b', gastoMensualRow ? 'Total Spend ÷ Tenure' : 'IQR real');
-      }
-      renderStatsTable(DATA_EDA_STATS);
-    }
+    // Update EDA KPIs desde Training data-1.csv
+    setEl('ss0', `EDA basado en Training data-1.csv · ${TRAINING_EDA_SUMMARY.n.toLocaleString()} registros · ${DATA_EDA_STATS.length} variables`);
+    setEl('k0-n', TRAINING_EDA_SUMMARY.n.toLocaleString());
+    setEl('k0-nb', 'n training real');
+    setEl('k0-cr', TRAINING_EDA_SUMMARY.churn_rate.toFixed(2) + '%');
+    setEl('k0-age', '$' + TRAINING_EDA_SUMMARY.total_spend_mean.toFixed(1));
+    setEl('k0-age-b', 'σ=' + TRAINING_EDA_SUMMARY.total_spend_std.toFixed(1));
+    setEl('k0-ten', TRAINING_EDA_SUMMARY.tenure_mean.toFixed(1) + ' m');
+    setEl('k0-ten-b', 'σ=' + TRAINING_EDA_SUMMARY.tenure_std.toFixed(1));
+    setEl('k0-sp', '$' + TRAINING_EDA_SUMMARY.gasto_mensual_mean.toFixed(1));
+    setEl('k0-sp-b', 'Total Spend ÷ Tenure');
+    renderStatsTable(DATA_EDA_STATS);
 
     if (DATA_EDA_CORR.length) buildCorrChart(DATA_EDA_CORR);
     if (DATA_EDA_CAT.length) { buildContractChart(DATA_EDA_CAT); buildGenderChart(DATA_EDA_CAT); }
 
-    // Tasa churn robusta: calcula desde Churn_Real del scoring cuando esté disponible.
-    const churnBase = DATA_ORIG.length ? DATA_ORIG : DATA_BLIND;
-    const churnValid = churnBase.filter(r =>
-      r.Churn_Real !== undefined &&
-      r.Churn_Real !== null &&
-      String(r.Churn_Real).trim() !== ''
-    );
-    if (churnValid.length) {
-      const churnRate = churnValid.filter(r => Number(String(r.Churn_Real).trim()) === 1).length / churnValid.length * 100;
-      setEl('k0-cr', churnRate.toFixed(2) + '%');
-    } else if (DATA_EDA_CHURN.length) {
-      const churnRow = DATA_EDA_CHURN.find(r => r.Churn==='1'||r.Churn==='True'||r.Etiqueta==='Churn');
-      if (churnRow) setEl('k0-cr', parseFloat(churnRow.Porcentaje||0).toFixed(1)+'%');
-      else setEl('k0-cr', 'N/A');
-    } else {
-      setEl('k0-cr', 'N/A');
-    }
-
-    // Total n from orig
-    if (DATA_ORIG.length) {
-      setEl('k0-n', DATA_ORIG.length.toLocaleString());
-      setEl('k0-nb', 'n scoring real');
+    // Total n del EDA se mantiene desde Training data-1.csv; ciudades/filtros siguen desde scoring.
+    if (DATA_ORIG.length || DATA_BLIND.length) {
       populateCities([...DATA_ORIG, ...DATA_BLIND]);
-    } else {
-      // Fallback
-      setEl('k0-n', '186,743');
-      setEl('k0-cr', '25.4%');
     }
 
-    setEl('us0', `✓ Datos reales cargados — ${DATA_EDA_STATS.length} estadísticos · ${DATA_ORIG.length} scoring orig · ${DATA_BLIND.length} scoring blind`);
+    setEl('us0', ` (${TRAINING_EDA_SUMMARY.n.toLocaleString()} registros) · Scoring Google Sheets: ${DATA_ORIG.length} orig · ${DATA_BLIND.length} blind`);
 
     // Apply filters to propagate everything
     FILT_ORIG = [...DATA_ORIG];
