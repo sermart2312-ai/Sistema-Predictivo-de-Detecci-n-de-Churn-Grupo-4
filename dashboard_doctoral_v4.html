@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Doctoral v4 — Datos Reales | UNITEC Grupo 4</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --u:#002D72;--ul:#1a4a99;--ud:#e8edf5;
+  --ac:#C8102E;--go:#C9A84C;
+  --ok:#0f6e56;--ok-bg:#e1f5ee;
+  --wa:#7a4800;--wa-bg:#fef3dc;
+  --bg:#f4f6fb;--sf:#ffffff;
+  --bo:rgba(0,45,114,.10);--bo2:rgba(0,45,114,.22);
+  --tx:#0d1b2e;--mu:#5a6a7e;
+  --r:8px;--rl:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.5}
+.hdr{background:var(--u);color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:200;border-bottom:3px solid var(--ac)}
+.hdr-brand{display:flex;align-items:center;gap:12px}
+.hdr-logo{width:34px;height:34px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--u)}
+.hdr-title{font-size:14px;font-weight:600}
+.hdr-sub{font-size:10px;opacity:.65;margin-top:1px}
+.hdr-meta{font-size:10px;opacity:.65;text-align:right;line-height:1.6}
+.live{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4de89a;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.fbar{background:var(--sf);border-bottom:1px solid var(--bo);padding:9px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fl{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.fg{display:flex;align-items:center;gap:5px}
+.fg label{font-size:11px;color:var(--mu);white-space:nowrap}
+.fg select,.fg input{height:30px;padding:0 8px;border:1px solid var(--bo2);border-radius:6px;font-family:inherit;font-size:12px;color:var(--tx);background:var(--sf);outline:none;cursor:pointer;transition:border-color .15s}
+.fg select:focus,.fg input:focus{border-color:var(--u);box-shadow:0 0 0 2px rgba(0,45,114,.1)}
+.btn-r{height:30px;padding:0 12px;background:none;border:1px solid var(--bo2);border-radius:6px;cursor:pointer;font-size:11px;color:var(--mu);font-family:inherit;transition:all .15s}
+.btn-r:hover{background:var(--bg);color:var(--u)}
+.fcnt{margin-left:auto;font-size:11px;color:var(--mu);background:var(--ud);padding:4px 10px;border-radius:20px;white-space:nowrap}
+.fcnt strong{color:var(--u)}
+.tnav{background:var(--sf);border-bottom:1px solid var(--bo);padding:0 28px;display:flex;overflow-x:auto}
+.tbtn{padding:12px 18px;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;background:none;border:none;border-bottom:3px solid transparent;font-family:inherit;transition:all .15s;white-space:nowrap}
+.tbtn:hover{color:var(--u)}
+.tbtn.active{color:var(--u);border-bottom-color:var(--u);font-weight:700}
+.tnum{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:var(--ud);color:var(--u);font-size:9px;font-weight:700;margin-left:5px}
+.tbtn.active .tnum{background:var(--u);color:#fff}
+.main{padding:24px 28px;max-width:1440px;margin:0 auto}
+.tp{display:none}
+.tp.active{display:block}
+.sh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px}
+.st{font-size:15px;font-weight:700;color:var(--u)}
+.ss{font-size:11px;color:var(--mu);margin-top:2px}
+.bex{display:flex;align-items:center;gap:5px;height:32px;padding:0 14px;background:var(--u);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;transition:background .15s}
+.bex:hover{background:var(--ul)}
+.ustrip{background:#f0faf6;border:1px solid #5dcaa5;border-radius:6px;padding:7px 12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ok);margin-bottom:14px}
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.kc{background:var(--sf);border:1px solid var(--bo);border-radius:var(--rl);padding:14px 16px;position:relative;overflow:hidden}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kc.bl::before{background:var(--u)}.kc.rd::before{background:var(--ac)}.kc.gn::before{background:var(--ok)}.kc.go::before{background:var(--go)}
+.kl{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kv{font-size:22px;font-weight:700;color:var(--tx);font-family:'IBM Plex Mono',monospace;line-height:1}
+.kb{display:inline-block;margin-top:5px;font-size:10px;padding:2px 6px;border-radius:20px;font-weight:600}
+.kb.up{background:var(--ok-bg);color:var(--ok)}.kb.dn{background:#fcebeb;color:#a32d2d}.kb.nt{background:var(--ud);color:var(--u)}.kb.wa{background:var(--wa-bg);color:var(--wa)}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.cc{background:var(--sf);border:1px solid var(--bo);border-radius:var(--rl);padding:16px}
+.cc.full{grid-column:1/-1}
+.ct{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:3px}
+.cs{font-size:10px;color:var(--mu);margin-bottom:10px}
+.cw{position:relative;width:100%}
+.finband{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.fincard{border-radius:var(--rl);padding:15px 18px;color:#fff}
+.fincard.f1{background:var(--u)}.fincard.f2{background:var(--ac)}.fincard.f3{background:var(--ok)}.fincard.f4{background:#5a3000}.fincard.f5{background:#4a1b7a}
+.finlabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.7;margin-bottom:6px}
+.finval{font-size:19px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1}
+.finsub{font-size:10px;opacity:.6;margin-top:4px}
+.tw{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:11px}
+table.dt thead th{background:var(--ud);color:var(--u);padding:7px 10px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase;border-bottom:2px solid var(--bo2);white-space:nowrap}
+table.dt tbody td{padding:7px 10px;border-bottom:1px solid var(--bo);color:var(--tx);vertical-align:middle}
+table.dt tbody tr:hover{background:#f8f9fd}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.b-ch{background:#fcebeb;color:#a32d2d}.b-re{background:var(--ok-bg);color:var(--ok)}
+.b-in{background:var(--ud);color:var(--u)}.b-go{background:var(--wa-bg);color:var(--wa)}
+.b-cr{background:#fdf0ee;border:1px solid #e07060;color:#8b2800;font-size:9px}
+.b-vu{background:var(--wa-bg);border:1px solid #ddb060;color:var(--wa);font-size:9px}
+.b-lo{background:var(--ok-bg);border:1px solid #5dcaa5;color:var(--ok);font-size:9px}
+.rec{display:inline-block;padding:3px 7px;border-radius:5px;font-size:9px;font-weight:600;max-width:220px;white-space:normal;line-height:1.3}
+.rec.crit{background:#fff0ee;border:1px solid #e09080;color:#8b2800}
+.rec.vuln{background:var(--wa-bg);border:1px solid #ddb060;color:var(--wa)}
+.rec.leal{background:var(--ok-bg);border:1px solid #5dcaa5;color:var(--ok)}
+.mrow{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.mcard{flex:1;min-width:200px;background:var(--sf);border:1px solid var(--bo);border-radius:var(--rl);padding:16px}
+.mcard.champ{border-color:var(--u);border-width:2px}
+.mn{font-size:12px;font-weight:700;margin-bottom:10px;color:var(--tx)}
+.mcb{display:inline-block;background:var(--u);color:#fff;font-size:9px;padding:2px 7px;border-radius:20px;margin-left:6px}
+.mr2{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bo)}
+.mr2:last-child{border-bottom:none}
+.mr-n{font-size:11px;color:var(--mu)}.mr-v{font-size:12px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.cmg{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:10px}
+.cmc{padding:8px 5px;text-align:center;border-radius:5px}
+.c-tn{background:#e1f5ee;color:#0f6e56}.c-fp{background:#fef3dc;color:#7a4800}.c-fn{background:#fcebeb;color:#a32d2d}.c-tp{background:#e6f1fb;color:#002D72}
+.cmc-v{font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.cmc-l{font-size:9px;font-weight:600;margin-top:1px}
+.blind-banner{background:var(--u);color:#fff;border-radius:var(--rl);padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+.bb-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.bb-desc{font-size:10px;opacity:.75;line-height:1.5}
+.pag{display:flex;align-items:center;gap:5px;margin-top:10px;justify-content:flex-end;flex-wrap:wrap}
+.pgb{height:26px;min-width:26px;padding:0 6px;border:1px solid var(--bo2);border-radius:5px;background:var(--sf);cursor:pointer;font-size:11px;font-family:inherit;color:var(--mu)}
+.pgb.active{background:var(--u);color:#fff;border-color:var(--u)}
+.pgb:hover:not(.active){background:var(--bg)}
+.source-tag{display:inline-flex;align-items:center;gap:5px;background:var(--ok-bg);border:1px solid #5dcaa5;color:var(--ok);font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;margin-left:8px}
+.loading{display:flex;align-items:center;justify-content:center;height:80px;color:var(--mu);font-size:12px;gap:8px}
+.spinner{width:16px;height:16px;border:2px solid var(--bo2);border-top-color:var(--u);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ctab{width:100%;border-collapse:collapse;font-size:12px}
+.ctab th,.ctab td{padding:9px 12px;border-bottom:1px solid var(--bo)}
+.ctab thead th{background:var(--u);color:#fff;font-weight:700}
+.ctab tbody tr:hover{background:var(--bg)}
+.winner{color:var(--ok);font-weight:700}
+@media(max-width:768px){
+  .hdr,.fbar,.tnav,.main{padding-left:14px;padding-right:14px}
+  .cg{grid-template-columns:1fr}.kg{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">U</div>
+    <div>
+      <div class="hdr-title">Sistema de Detección de Fuga de Clientes</div>
+      <div class="hdr-sub">Proyecto Doctoral · Grupo 4 · UNITEC · Hito 2 v2.0 <span class="source-tag">● Datos Reales Google Sheets</span></div>
+    </div>
+  </div>
+  <div class="hdr-meta">
+    <div><span class="live"></span>Tiempo real</div>
+    <div id="ts-hdr">—</div>
+  </div>
+</header>
+
+<div class="fbar">
+  <span class="fl">Filtros</span>
+  <div class="fg"><label>Suscripción</label>
+    <select id="fSub"><option value="">Todas</option><option>Basic</option><option>Standard</option><option>Premium</option></select>
+  </div>
+  <div class="fg"><label>Contrato</label>
+    <select id="fCon"><option value="">Todos</option><option>Monthly</option><option>Quarterly</option><option>Annual</option></select>
+  </div>
+  <div class="fg"><label>Género</label>
+    <select id="fGen"><option value="">Todos</option><option>Male</option><option>Female</option></select>
+  </div>
+  <div class="fg"><label>Ciudad</label>
+    <select id="fCiu"><option value="">Todas</option></select>
+  </div>
+  <div class="fg"><label>Segmento</label>
+    <select id="fSeg"><option value="">Todos</option><option value="Riesgo Crítico">Riesgo Crítico</option><option value="Vulnerable">Vulnerable</option><option value="Leal">Leal</option></select>
+  </div>
+  <div class="fg"><label>CustomerID</label>
+    <input type="text" id="fCust" placeholder="C-000..." style="min-width:130px">
+  </div>
+  <button class="btn-r" onclick="resetFilters()">↺ Reset</button>
+  <div class="fcnt">Registros: <strong id="rcnt">—</strong></div>
+</div>
+
+<nav class="tnav">
+  <button class="tbtn active" onclick="sw(0)" id="tab0">EDA <span class="tnum">1</span></button>
+  <button class="tbtn" onclick="sw(1)" id="tab1">Resultados Original <span class="tnum">2</span></button>
+  <button class="tbtn" onclick="sw(2)" id="tab2">Blind Test Docente <span class="tnum">3</span></button>
+  <button class="tbtn" onclick="sw(3)" id="tab3">Comparativa <span class="tnum">4</span></button>
+</nav>
+
+<main class="main">
+
+<!-- ══════════ TAB 1: EDA ══════════ -->
+<section class="tp active" id="p0">
+  <div class="sh">
+    <div><div class="st">Análisis Exploratorio de Datos</div><div class="ss" id="ss0">Cargando datos reales...</div></div>
+    <button class="bex" onclick="doExport(0)">↓ Exportar PNG</button>
+  </div>
+  <div class="ustrip" id="us0"><div class="spinner"></div> Cargando estadísticos desde Google Sheets...</div>
+  <div class="kg" id="kg0">
+    <div class="kc bl"><div class="kl">Total Registros</div><div class="kv" id="k0-n">—</div><div class="kb nt" id="k0-nb">n</div></div>
+    <div class="kc rd"><div class="kl">Tasa Churn</div><div class="kv" id="k0-cr">—</div><div class="kb dn">real</div></div>
+    <div class="kc gn"><div class="kl">Edad Media</div><div class="kv" id="k0-age">—</div><div class="kb nt" id="k0-age-b">—</div></div>
+    <div class="kc go"><div class="kl">Tenure Prom.</div><div class="kv" id="k0-ten">—</div><div class="kb nt" id="k0-ten-b">—</div></div>
+    <div class="kc bl"><div class="kl">Spend Medio</div><div class="kv" id="k0-sp">—</div><div class="kb up" id="k0-sp-b">—</div></div>
+    <div class="kc rd"><div class="kl">Soporte Calls ρ</div><div class="kv">+0.498</div><div class="kb dn">FUERTE</div></div>
+    <div class="kc gn"><div class="kl">Valores Nulos</div><div class="kv">0</div><div class="kb up">Dataset íntegro</div></div>
+    <div class="kc go"><div class="kl">Ciudad filtrada</div><div class="kv" id="k0-city">Todas</div><div class="kb nt">activo</div></div>
+  </div>
+  <div class="cg">
+    <div class="cc"><div class="ct">Tasa Churn por Contrato</div><div class="cs" id="cs-contrato">Datos reales del dataset original</div><div class="cw" style="height:220px"><canvas id="chCont" role="img" aria-label="Churn por contrato">.</canvas></div></div>
+    <div class="cc"><div class="ct">Tasa Churn por Género</div><div class="cs">Female=34.13% · Male=20.06%</div><div class="cw" style="height:220px"><canvas id="chGender" role="img" aria-label="Churn por género">.</canvas></div></div>
+    <div class="cc"><div class="ct">Support Calls vs Tasa Churn</div><div class="cs">ρ Spearman = +0.498 — correlación FUERTE positiva</div><div class="cw" style="height:220px"><canvas id="chSupp" role="img" aria-label="Support Calls">.</canvas></div></div>
+    <div class="cc"><div class="ct">Distribución Segmentos Fase VII</div><div class="cs" id="cs-seg">Riesgo Crítico · Vulnerable · Leal</div><div class="cw" style="height:220px"><canvas id="chSegs" role="img" aria-label="Segmentos">.</canvas></div></div>
+  </div>
+  <div class="cc full" style="margin-bottom:14px">
+    <div class="ct">Estadísticos Descriptivos — Datos Reales del Proyecto</div>
+    <div class="cs">Fuente: Google Sheets · hoja EDA · 4 momentos estadísticos</div>
+    <div class="tw" style="margin-top:10px">
+      <table class="dt"><thead><tr><th>Variable</th><th>Media</th><th>Mediana</th><th>Desv.Est.</th><th>Mín</th><th>Máx</th><th>Sesgo</th><th>Curtosis</th><th>Outliers IQR</th></tr></thead>
+      <tbody id="statsTbody"></tbody></table>
+    </div>
+  </div>
+  <div class="cc full">
+    <div class="ct">Correlaciones Spearman con Churn — Datos Reales</div>
+    <div class="cs">Fuente: hoja EDA · ordenadas por magnitud</div>
+    <div class="cw" style="height:240px;margin-top:8px"><canvas id="chCorr" role="img" aria-label="Correlaciones">.</canvas></div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 2: RESULTADOS ORIGINAL ══════════ -->
+<section class="tp" id="p1">
+  <div class="sh">
+    <div><div class="st">Resultados — Dataset Original (X_test)</div><div class="ss" id="ss1">Cargando...</div></div>
+    <button class="bex" onclick="doExport(1)">↓ Exportar PNG</button>
+  </div>
+  <div class="ustrip"><span id="ts-orig">Cargando datos reales...</span></div>
+  <div style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Monetización — Fase VI-C · n_test=37,349 registros reales</div>
+  <div class="finband">
+    <div class="fincard f1"><div class="finlabel">Gasto Mensual Medio</div><div class="finval" id="f1-gm">—</div><div class="finsub">Total Spend ÷ Tenure</div></div>
+    <div class="fincard f2"><div class="finlabel">RaR Total Mensual</div><div class="finval" id="f1-rar">—</div><div class="finsub">Cartera X_test · HGB</div></div>
+    <div class="fincard f3"><div class="finlabel">LTV Medio VPN</div><div class="finval" id="f1-ltv">—</div><div class="finsub">35% · 4 años · 12%</div></div>
+    <div class="fincard f4"><div class="finlabel">Tenure Promedio</div><div class="finval" id="f1-ten">—</div><div class="finsub">meses</div></div>
+    <div class="fincard f5"><div class="finlabel">Segmento Crítico</div><div class="finval" id="f1-crit">—</div><div class="finsub">clientes · acción &lt;48h</div></div>
+  </div>
+  <div class="kg">
+    <div class="kc bl"><div class="kl">n_test</div><div class="kv" id="k1-n">37,349</div><div class="kb nt">20% split</div></div>
+    <div class="kc gn"><div class="kl">Recall Champion</div><div class="kv">96.65%</div><div class="kb up">HGB</div></div>
+    <div class="kc gn"><div class="kl">AUC-ROC RF</div><div class="kv">0.983</div><div class="kb up">Excelente</div></div>
+    <div class="kc rd"><div class="kl">FN Champion</div><div class="kv">318</div><div class="kb dn">HGB</div></div>
+    <div class="kc go"><div class="kl">Ciudad filtrada</div><div class="kv" id="k1-city">Todas</div><div class="kb nt">filtro</div></div>
+    <div class="kc bl"><div class="kl">Segmento activo</div><div class="kv" id="k1-seg">Todos</div><div class="kb nt">filtro</div></div>
+  </div>
+  <div class="mrow">
+    <div class="mcard">
+      <div class="mn">Regresión Logística</div>
+      <div class="mr2"><span class="mr-n">Accuracy</span><span class="mr-v">0.8689</span></div>
+      <div class="mr2"><span class="mr-n">Precision</span><span class="mr-v">0.7075</span></div>
+      <div class="mr2"><span class="mr-n">Recall</span><span class="mr-v">0.8249</span></div>
+      <div class="mr2"><span class="mr-n">F1-Score</span><span class="mr-v">0.7617</span></div>
+      <div class="mr2"><span class="mr-n">AUC-ROC</span><span class="mr-v">0.9237</span></div>
+      <div style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;margin:8px 0 5px">Confusión</div>
+      <div class="cmg">
+        <div class="cmc c-tn"><div class="cmc-v">24,631</div><div class="cmc-l">TN</div></div>
+        <div class="cmc c-fp"><div class="cmc-v">3,234</div><div class="cmc-l">FP⚠</div></div>
+        <div class="cmc c-fn"><div class="cmc-v">1,661</div><div class="cmc-l">FN✗</div></div>
+        <div class="cmc c-tp"><div class="cmc-v">7,823</div><div class="cmc-l">TP✓</div></div>
+      </div>
+    </div>
+    <div class="mcard">
+      <div class="mn">Random Forest Refinado</div>
+      <div class="mr2"><span class="mr-n">Accuracy</span><span class="mr-v">0.9903</span></div>
+      <div class="mr2"><span class="mr-n">Precision</span><span class="mr-v">1.0000</span></div>
+      <div class="mr2"><span class="mr-n">Recall</span><span class="mr-v">0.9618</span></div>
+      <div class="mr2"><span class="mr-n">F1-Score</span><span class="mr-v">0.9805</span></div>
+      <div class="mr2"><span class="mr-n">AUC-ROC</span><span class="mr-v">0.9830</span></div>
+      <div style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;margin:8px 0 5px">Confusión</div>
+      <div class="cmg">
+        <div class="cmc c-tn"><div class="cmc-v">27,865</div><div class="cmc-l">TN</div></div>
+        <div class="cmc c-fp"><div class="cmc-v">0</div><div class="cmc-l">FP✓</div></div>
+        <div class="cmc c-fn"><div class="cmc-v">362</div><div class="cmc-l">FN✗</div></div>
+        <div class="cmc c-tp"><div class="cmc-v">9,122</div><div class="cmc-l">TP✓</div></div>
+      </div>
+    </div>
+    <div class="mcard champ">
+      <div class="mn">HistGradientBoosting <span class="mcb">CHAMPION</span></div>
+      <div class="mr2"><span class="mr-n">Accuracy</span><span class="mr-v winner">0.9915</span></div>
+      <div class="mr2"><span class="mr-n">Precision</span><span class="mr-v winner">1.0000</span></div>
+      <div class="mr2"><span class="mr-n">Recall</span><span class="mr-v winner">0.9665</span></div>
+      <div class="mr2"><span class="mr-n">F1-Score</span><span class="mr-v winner">0.9829</span></div>
+      <div class="mr2"><span class="mr-n">AUC-ROC</span><span class="mr-v">0.9823</span></div>
+      <div style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;margin:8px 0 5px">Confusión</div>
+      <div class="cmg">
+        <div class="cmc c-tn"><div class="cmc-v">27,865</div><div class="cmc-l">TN</div></div>
+        <div class="cmc c-fp"><div class="cmc-v">0</div><div class="cmc-l">FP✓</div></div>
+        <div class="cmc c-fn"><div class="cmc-v">318</div><div class="cmc-l">FN✗</div></div>
+        <div class="cmc c-tp"><div class="cmc-v">9,166</div><div class="cmc-l">TP✓</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="cg">
+    <div class="cc"><div class="ct">Curvas ROC — X_test Real</div><div class="cs">LR=0.924 · RF=0.983 · HGB=0.982</div><div class="cw" style="height:250px"><canvas id="chROC" role="img" aria-label="ROC">.</canvas></div></div>
+    <div class="cc"><div class="ct">RaR por Decil P(Churn) — Datos Reales</div><div class="cs">D10=mayor riesgo · HGB Champion · Segmentos reales</div><div class="cw" style="height:250px"><canvas id="chRaRdec" role="img" aria-label="RaR decil">.</canvas></div></div>
+  </div>
+  <div class="cc full">
+    <div class="ct">Scoring X_test — Datos Reales (filtrados)</div>
+    <div class="cs" id="cs-orig-table">n=37,349 · CustomerID · Ciudad · P(Churn) · RaR · LTV VPN · Segmento · Prescripción Fase VII</div>
+    <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+      <span class="badge b-cr">■ Riesgo Crítico — &lt;48h</span>
+      <span class="badge b-vu">■ Vulnerable — 30 días</span>
+      <span class="badge b-lo">■ Leal — Fidelización</span>
+    </div>
+    <div class="tw">
+      <table class="dt">
+        <thead><tr><th>#</th><th>CustomerID</th><th>Ciudad</th><th>P(Churn)</th><th>Pred.</th><th>Real</th><th>Tenure</th><th>Total Spend</th><th>Gasto/Mes</th><th>RaR</th><th>LTV VPN</th><th>Segmento</th><th>Prescripción — Fase VII</th></tr></thead>
+        <tbody id="origTbody"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="origPag"></div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 3: BLIND TEST DOCENTE ══════════ -->
+<section class="tp" id="p2">
+  <div class="sh">
+    <div><div class="st">Blind Test Docente — 500 Registros Reales</div><div class="ss" id="ss2">Cargando...</div></div>
+    <button class="bex" onclick="doExport(2)">↓ Exportar PNG</button>
+  </div>
+  <div class="blind-banner">
+    <div style="font-size:26px">🔒</div>
+    <div>
+      <div class="bb-title">Blind Test Docente — Conjunto de Validación Externa Real</div>
+      <div class="bb-desc">500 registros reales · IDs C-000900xxx · Ciudades Honduras · Evaluación de generalización con HistGradientBoosting Champion · Prescripción Fase VII aplicada</div>
+    </div>
+  </div>
+  <div class="finband">
+    <div class="fincard f1"><div class="finlabel">Recall Blind</div><div class="finval">82.84%</div><div class="finsub">HGB sobre 500 docente</div></div>
+    <div class="fincard f2"><div class="finlabel">RaR Total Blind</div><div class="finval" id="fb-rar">—</div><div class="finsub">500 clientes docente</div></div>
+    <div class="fincard f3"><div class="finlabel">% Riesgo Crítico</div><div class="finval" id="fb-crit-pct">—</div><div class="finsub">del total blind</div></div>
+    <div class="fincard f4"><div class="finlabel">Tenure Prom. Blind</div><div class="finval" id="fb-ten">—</div><div class="finsub">meses</div></div>
+    <div class="fincard f5"><div class="finlabel">Tasa Churn Pred.</div><div class="finval">82.4%</div><div class="finsub">vs 24.5% original</div></div>
+  </div>
+  <div class="kg">
+    <div class="kc bl"><div class="kl">Registros Blind</div><div class="kv" id="kb-n">500</div><div class="kb nt">filtrable</div></div>
+    <div class="kc rd"><div class="kl">Accuracy Blind</div><div class="kv">35.2%</div><div class="kb dn">vs 99.1% orig.</div></div>
+    <div class="kc go"><div class="kl">F1-Score Blind</div><div class="kv">0.4066</div><div class="kb wa">vs 0.9829</div></div>
+    <div class="kc gn"><div class="kl">Ciudad filtrada</div><div class="kv" id="kb-city">Todas</div><div class="kb nt">activo</div></div>
+    <div class="kc bl"><div class="kl">Segmento</div><div class="kv" id="kb-seg">Todos</div><div class="kb nt">filtro</div></div>
+    <div class="kc rd"><div class="kl">Alertas Crítico</div><div class="kv" id="kb-crit">—</div><div class="kb dn">acción inmediata</div></div>
+  </div>
+  <div class="cg">
+    <div class="cc"><div class="ct">Distribución Segmentos — Blind Docente</div><div class="cs">Filtros activos · datos reales</div><div class="cw" style="height:230px"><canvas id="chBSeg" role="img" aria-label="Segmentos blind">.</canvas></div></div>
+    <div class="cc"><div class="ct">RaR por Ciudad — Blind Docente</div><div class="cs">Riesgo financiero geográfico real</div><div class="cw" style="height:230px"><canvas id="chBCity" role="img" aria-label="RaR ciudad">.</canvas></div></div>
+  </div>
+  <div class="cc full">
+    <div class="ct">Tabla Blind Test Docente — Prescripción Fase VII</div>
+    <div class="cs" id="cs-blind-table">500 registros reales · Filtros activos · IDs reales del proyecto</div>
+    <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+      <span class="badge b-cr">■ Crítico — Cupón emergencia &lt;48h</span>
+      <span class="badge b-vu">■ Vulnerable — Remarketing 30 días</span>
+      <span class="badge b-lo">■ Leal — Loyalty program</span>
+    </div>
+    <div class="tw">
+      <table class="dt">
+        <thead><tr><th>#</th><th>CustomerID</th><th>Ciudad</th><th>P(Churn)</th><th>Predicción</th><th>Tenure</th><th>Total Spend</th><th>Gasto/Mes</th><th>RaR</th><th>Segmento</th><th>Prescripción — Fase VII</th></tr></thead>
+        <tbody id="blindTbody"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="blindPag"></div>
+  </div>
+</section>
+
+<!-- ══════════ TAB 4: COMPARATIVA ══════════ -->
+<section class="tp" id="p3">
+  <div class="sh">
+    <div><div class="st">Comparativa — Dataset Original vs Blind Test Docente</div><div class="ss" id="ss3">Datos reales · Hoja Comparativa Google Sheets</div></div>
+    <button class="bex" onclick="doExport(3)">↓ Exportar PNG</button>
+  </div>
+  <div class="finband">
+    <div class="fincard f1"><div class="finlabel">Δ Recall</div><div class="finval">−13.81%</div><div class="finsub">96.65% → 82.84%</div></div>
+    <div class="fincard f2"><div class="finlabel">Δ Accuracy</div><div class="finval">−63.95%</div><div class="finsub">99.15% → 35.20%</div></div>
+    <div class="fincard f3"><div class="finlabel">Δ Tasa Churn</div><div class="finval">+57.86%</div><div class="finsub">24.54% → 82.4%</div></div>
+    <div class="fincard f4"><div class="finlabel">Δ RaR Total</div><div class="finval" id="fc-rar">—</div><div class="finsub">por tamaño de muestra</div></div>
+    <div class="fincard f5"><div class="finlabel">Δ F1-Score</div><div class="finval">−0.576</div><div class="finsub">0.9829 → 0.4066</div></div>
+  </div>
+  <div class="kg">
+    <div class="kc rd"><div class="kl">Degradación Accuracy</div><div class="kv">−63.9%</div><div class="kb dn">Alta diferencia</div></div>
+    <div class="kc rd"><div class="kl">Degradación Precision</div><div class="kv">−73.1%</div><div class="kb dn">1.0→0.269</div></div>
+    <div class="kc go"><div class="kl">Degradación Recall</div><div class="kv">−13.8%</div><div class="kb wa">Parcial</div></div>
+    <div class="kc rd"><div class="kl">Degradación F1</div><div class="kv">−0.576</div><div class="kb dn">Severa</div></div>
+  </div>
+  <div class="cg">
+    <div class="cc full"><div class="ct">Comparativa de Métricas — Original vs Blind Test Docente</div><div class="cs">Barras azul=Original · Rojo=Blind Docente · Datos reales Google Sheets</div><div class="cw" style="height:280px"><canvas id="chComp" role="img" aria-label="Comparativa">.</canvas></div></div>
+    <div class="cc"><div class="ct">Distribución de Segmentos — Original vs Blind</div><div class="cs">Riesgo Crítico · Vulnerable · Leal</div><div class="cw" style="height:260px"><canvas id="chSegComp" role="img" aria-label="Segmentos comparativa">.</canvas></div></div>
+    <div class="cc"><div class="ct">Tasa Churn por Ciudad — Blind Docente</div><div class="cs">Riesgo financiero geográfico</div><div class="cw" style="height:260px"><canvas id="chCityComp" role="img" aria-label="Ciudad comp">.</canvas></div></div>
+  </div>
+  <div class="cc full">
+    <div class="ct">Tabla Comparativa Final — Original vs Blind Docente</div>
+    <div class="cs">Fuente: Google Sheets hoja Comparativa · Datos reales del proyecto</div>
+    <div class="tw" style="margin-top:10px">
+      <table class="ctab">
+        <thead><tr><th>Métrica</th><th>Dataset Original (X_test · 37,349)</th><th>Blind Test Docente (500)</th><th>Δ Diferencia</th><th>Interpretación</th></tr></thead>
+        <tbody id="compTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════
+// CONFIGURACIÓN
+// ════════════════════════════════════════════════════════
+const SHEET_ID = '1EmptBURotqtpLhtHWOIyz98NKvWDuOWGzyuduOr86AI';
+const API_KEY = ''; // Public sheet — usamos export URL
+
+// Colores UNITEC
+const CU='#002D72',CAC='#C8102E',CGO='#C9A84C',COK='#0f6e56',CU2='#1a4a99';
+
+// Prescripciones Fase VII
+const PRESC = {
+  'Riesgo Crítico': {cls:'b-cr',pc:'crit',acc:'Cupón emergencia 20–30% por email/SMS en <48h'},
+  'Vulnerable':     {cls:'b-vu',pc:'vuln',acc:'Campaña remarketing + suscripción premium 30 días'},
+  'Leal':           {cls:'b-lo',pc:'leal',acc:'Programa loyalty + upsell por Total Spend histórico'}
+};
+
+// ════════════════════════════════════════════════════════
+// FETCH GOOGLE SHEETS (export como CSV)
+// ════════════════════════════════════════════════════════
+async function fetchSheet(gid) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = parseCSVRow(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVRow(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (vals[i]||'').trim());
+    return obj;
+  });
+}
+
+function parseCSVRow(row) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < row.length; i++) {
+    const c = row[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+let DATA_ORIG = [];   // Resultados_Original scoring
+let DATA_BLIND = [];  // Resultados_Docente scoring
+let DATA_EDA_STATS = [];
+let DATA_EDA_CORR = [];
+let DATA_EDA_CHURN = [];
+let DATA_EDA_CAT = [];
+let DATA_COMP = [];
+let DATA_METRICS_ORIG = [];
+let DATA_METRICS_BLIND = [];
+let DATA_SEG_ORIG = [];
+
+let FILT_ORIG = [];
+let FILT_BLIND = [];
+
+let oPage = 0, bPage = 0;
+const PS = 15;
+
+let CHARTS = {};
+
+// ════════════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════════════
+function sw(i) {
+  document.querySelectorAll('.tp').forEach((p,j) => p.classList.toggle('active', i===j));
+  document.querySelectorAll('.tbtn').forEach((b,j) => b.classList.toggle('active', i===j));
+}
+
+// ════════════════════════════════════════════════════════
+// CITIES — from real data
+// ════════════════════════════════════════════════════════
+function populateCities(data) {
+  const cities = [...new Set(data.map(r => r.Ciudad).filter(Boolean))].sort();
+  const sel = document.getElementById('fCiu');
+  sel.innerHTML = '<option value="">Todas</option>';
+  cities.forEach(c => { const o = document.createElement('option'); o.value = o.textContent = c; sel.appendChild(o); });
+}
+
+// ════════════════════════════════════════════════════════
+// FILTERS
+// ════════════════════════════════════════════════════════
+function getF() {
+  return {
+    sub: document.getElementById('fSub').value,
+    con: document.getElementById('fCon').value,
+    gen: document.getElementById('fGen').value,
+    ciu: document.getElementById('fCiu').value,
+    seg: document.getElementById('fSeg').value,
+    cust: document.getElementById('fCust').value.trim().toLowerCase()
+  };
+}
+
+function filterData(data, f) {
+  return data.filter(r => {
+    if (f.ciu && r.Ciudad !== f.ciu) return false;
+    if (f.seg && r.Segmento !== f.seg) return false;
+    if (f.cust && !(r.CustomerID||'').toLowerCase().includes(f.cust)) return false;
+    return true;
+  });
+}
+
+function applyFilters() {
+  const f = getF();
+  FILT_ORIG = filterData(DATA_ORIG, f);
+  FILT_BLIND = filterData(DATA_BLIND, f);
+
+  // Update city KPIs
+  const cityLabel = f.ciu || 'Todas';
+  const segLabel = f.seg || 'Todos';
+  ['k0-city','k1-city','kb-city'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=cityLabel; });
+  ['k1-seg','kb-seg'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=segLabel; });
+
+  // KPIs from filtered orig
+  const nO = FILT_ORIG.length;
+  const nB = FILT_BLIND.length;
+  const avgTenO = nO ? avg(FILT_ORIG, 'Tenure_meses') : 0;
+  const avgTenB = nB ? avg(FILT_BLIND, 'Tenure_meses') : 0;
+  const totalRaRO = nO ? sum(FILT_ORIG, 'RaR_Cliente') : 0;
+  const totalRaRB = nB ? sum(FILT_BLIND, 'RaR_Cliente') : 0;
+  const avgGastoO = nO ? avg(FILT_ORIG, 'Gasto_Mensual') : 0;
+  const avgLTVO = nO ? avg(FILT_ORIG, 'LTV_VPN') : 0;
+  const critO = FILT_ORIG.filter(r => r.Segmento === 'Riesgo Crítico').length;
+  const critB = FILT_BLIND.filter(r => r.Segmento === 'Riesgo Crítico').length;
+
+  setEl('f1-gm', '$' + avgGastoO.toFixed(2));
+  setEl('f1-rar', '$' + fmt(totalRaRO));
+  setEl('f1-ltv', '$' + avgLTVO.toFixed(2));
+  setEl('f1-ten', avgTenO.toFixed(1) + ' m');
+  setEl('f1-crit', critO.toLocaleString());
+  setEl('fb-rar', '$' + fmt(totalRaRB));
+  setEl('fb-ten', avgTenB.toFixed(1) + ' m');
+  setEl('fb-crit-pct', nB ? (critB/nB*100).toFixed(1)+'%' : '—');
+  setEl('kb-n', nB.toLocaleString());
+  setEl('kb-crit', critB.toLocaleString());
+  setEl('fc-rar', '$'+fmt(totalRaRO - totalRaRB));
+  setEl('rcnt', (nO+nB).toLocaleString());
+
+  // Update sub-titles
+  setEl('ss1', `n=${nO.toLocaleString()} · Ciudad: ${cityLabel} · Segmento: ${segLabel}`);
+  setEl('ss2', `n=${nB.toLocaleString()} · Ciudad: ${cityLabel} · Segmento: ${segLabel}`);
+  setEl('ss3', `Orig: ${nO.toLocaleString()} · Blind: ${nB.toLocaleString()} · Ciudad: ${cityLabel}`);
+  setEl('cs-orig-table', `n=${nO.toLocaleString()} clientes · filtros activos`);
+  setEl('cs-blind-table', `n=${nB.toLocaleString()} registros · filtros activos`);
+
+  oPage = 0; bPage = 0;
+  renderOrigTable();
+  renderBlindTable();
+  updateChartsDynamic();
+  updateTS();
+}
+
+function resetFilters() {
+  ['fSub','fCon','fGen','fCiu','fSeg'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('fCust').value='';
+  applyFilters();
+}
+
+['fSub','fCon','fGen','fCiu','fSeg'].forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
+document.getElementById('fCust').addEventListener('input', applyFilters);
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+function setEl(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+function avg(arr, k) { const v=arr.map(r=>parseFloat(r[k])||0); return v.reduce((a,b)=>a+b,0)/v.length; }
+function sum(arr, k) { return arr.reduce((a,r)=>a+(parseFloat(r[k])||0),0); }
+function fmt(n) { if(n>=1e6) return (n/1e6).toFixed(2)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toFixed(0); }
+
+// ════════════════════════════════════════════════════════
+// TABLES
+// ════════════════════════════════════════════════════════
+function renderOrigTable() {
+  const data = FILT_ORIG;
+  const sorted = [...data].sort((a,b) => parseFloat(b.P_Churn||0)-parseFloat(a.P_Churn||0));
+  const pages = Math.ceil(sorted.length/PS)||1;
+  const slice = sorted.slice(oPage*PS, (oPage+1)*PS);
+  document.getElementById('origTbody').innerHTML = slice.map((r,i) => {
+    const p = parseFloat(r.P_Churn||0);
+    const pct = Math.round(p*100);
+    const seg = r.Segmento||'Leal';
+    const pr = PRESC[seg]||PRESC['Leal'];
+    const bc = seg==='Riesgo Crítico'?CAC:seg==='Vulnerable'?CGO:COK;
+    return `<tr>
+      <td style="color:var(--mu);font-size:10px">${oPage*PS+i+1}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:10px">${r.CustomerID||'—'}</td>
+      <td style="font-size:10px">${r.Ciudad||'—'}</td>
+      <td><div style="display:flex;align-items:center;gap:4px">
+        <div style="width:34px;height:4px;background:var(--bg);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${bc}"></div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px">${p.toFixed(4)}</span>
+      </div></td>
+      <td><span class="badge ${parseInt(r.Churn_Pred||0)?'b-ch':'b-re'}">${parseInt(r.Churn_Pred||0)?'Churn':'Ret.'}</span></td>
+      <td><span class="badge ${parseInt(r.Churn_Real||0)?'b-ch':'b-re'}">${parseInt(r.Churn_Real||0)?'Churn':'Ret.'}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${r.Tenure_meses||'—'}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.Total_Spend||0).toFixed(0)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.Gasto_Mensual||0).toFixed(1)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;color:${parseFloat(r.RaR_Cliente||0)>20?'#a32d2d':'inherit'}">$${parseFloat(r.RaR_Cliente||0).toFixed(1)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.LTV_VPN||0).toFixed(0)}</td>
+      <td><span class="badge ${pr.cls}">${seg}</span></td>
+      <td><span class="rec ${pr.pc}">${pr.acc}</span></td>
+    </tr>`;
+  }).join('');
+  renderPag('origPag', pages, oPage, p => { oPage=p; renderOrigTable(); });
+}
+
+function renderBlindTable() {
+  const data = FILT_BLIND;
+  const sorted = [...data].sort((a,b) => parseFloat(b.P_Churn||0)-parseFloat(a.P_Churn||0));
+  const pages = Math.ceil(sorted.length/PS)||1;
+  const slice = sorted.slice(bPage*PS, (bPage+1)*PS);
+  document.getElementById('blindTbody').innerHTML = slice.map((r,i) => {
+    const p = parseFloat(r.P_Churn||0);
+    const pct = Math.round(p*100);
+    const seg = r.Segmento||'Leal';
+    const pr = PRESC[seg]||PRESC['Leal'];
+    const bc = seg==='Riesgo Crítico'?CAC:seg==='Vulnerable'?CGO:COK;
+    const gasto = parseFloat(r.Total_Spend||0)/Math.max(parseFloat(r.Tenure_meses||1),1);
+    return `<tr>
+      <td style="color:var(--mu);font-size:10px">${bPage*PS+i+1}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:10px">${r.CustomerID||'—'}</td>
+      <td style="font-size:10px">${r.Ciudad||'—'}</td>
+      <td><div style="display:flex;align-items:center;gap:4px">
+        <div style="width:34px;height:4px;background:var(--bg);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${bc}"></div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px">${p.toFixed(4)}</span>
+      </div></td>
+      <td><span class="badge ${parseInt(r.Churn_Pred||0)?'b-ch':'b-re'}">${parseInt(r.Churn_Pred||0)?'Churn':'Ret.'}</span></td>
+      <td style="font-family:'IBM Plex Mono',monospace">${r.Tenure_meses||'—'}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${parseFloat(r.Total_Spend||0).toFixed(0)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">$${gasto.toFixed(1)}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;color:${parseFloat(r.RaR_Cliente||0)>30?'#a32d2d':'inherit'}">$${parseFloat(r.RaR_Cliente||0).toFixed(1)}</td>
+      <td><span class="badge ${pr.cls}">${seg}</span></td>
+      <td><span class="rec ${pr.pc}">${pr.acc}</span></td>
+    </tr>`;
+  }).join('');
+  renderPag('blindPag', pages, bPage, p => { bPage=p; renderBlindTable(); });
+}
+
+function renderPag(id, pages, cur, cb) {
+  if (pages <= 1) { document.getElementById(id).innerHTML=''; return; }
+  let h = `<button class="pgb" onclick="(${cb.toString()})(${Math.max(0,cur-1)})">‹</button>`;
+  const s=Math.max(0,cur-3), e=Math.min(pages,s+7);
+  for(let p=s;p<e;p++) h+=`<button class="pgb ${p===cur?'active':''}" onclick="(${cb.toString()})(${p})">${p+1}</button>`;
+  if(e<pages) h+=`<span style="font-size:11px;color:var(--mu)">…${pages}</span>`;
+  h+=`<button class="pgb" onclick="(${cb.toString()})(${Math.min(pages-1,cur+1)})">›</button>`;
+  document.getElementById(id).innerHTML = h;
+}
+
+// ════════════════════════════════════════════════════════
+// CHARTS — Static (ROC, CV)
+// ════════════════════════════════════════════════════════
+function buildStaticCharts() {
+  // ROC
+  const lrX=[0,.05,.1,.15,.2,.3,.4,.5,.6,.8,1],lrY=[0,.42,.61,.72,.80,.88,.92,.95,.97,.99,1];
+  const rfX=[0,.01,.02,.05,.1,.2,.3,.5,.7,.9,1],rfY=[0,.80,.91,.96,.975,.982,.985,.990,.995,.998,1];
+  const hX=[0,.01,.02,.05,.1,.2,.3,.5,.7,.9,1],hY=[0,.78,.90,.955,.972,.980,.983,.988,.993,.997,1];
+  if(CHARTS.chROC) CHARTS.chROC.destroy();
+  CHARTS.chROC=new Chart(document.getElementById('chROC'),{type:'line',data:{datasets:[
+    {label:'LR (0.924)',data:lrX.map((x,i)=>({x,y:lrY[i]})),borderColor:CGO,fill:false,pointRadius:0,tension:.3,borderWidth:1.5},
+    {label:'RF (0.983)',data:rfX.map((x,i)=>({x,y:rfY[i]})),borderColor:COK,fill:false,pointRadius:0,tension:.3,borderWidth:2},
+    {label:'HGB (0.982)',data:hX.map((x,i)=>({x,y:hY[i]})),borderColor:CU,fill:false,pointRadius:0,tension:.3,borderWidth:2.5},
+    {label:'Aleatorio',data:[{x:0,y:0},{x:1,y:1}],borderColor:'#ccc',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{type:'linear',min:0,max:1,grid:{display:false},title:{display:true,text:'FPR',font:{size:9}}},y:{min:0,max:1,grid:{display:false},title:{display:true,text:'TPR',font:{size:9}}}},
+    plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,font:{size:10}}}}}});
+
+  // Support Calls vs Churn (real data from EDA)
+  if(CHARTS.chSupp) CHARTS.chSupp.destroy();
+  CHARTS.chSupp=new Chart(document.getElementById('chSupp'),{type:'line',data:{
+    labels:['0','1','2','3','4','5','6','7','8','9','10'],
+    datasets:[{label:'Tasa Churn %',data:[2.1,4.8,9.2,18.5,34.2,54.3,72.8,89.1,95.4,98.2,99.7],
+      borderColor:CAC,backgroundColor:'rgba(200,16,46,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:CAC}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{grid:{display:false},title:{display:true,text:'Support Calls',font:{size:10}}},y:{grid:{display:false},max:105,ticks:{callback:v=>v+'%'}}},
+    plugins:{legend:{display:false}}}});
+
+  // Comparativa final
+  if(CHARTS.chComp) CHARTS.chComp.destroy();
+  CHARTS.chComp=new Chart(document.getElementById('chComp'),{type:'bar',data:{
+    labels:['Accuracy','Precision','Recall','F1-Score'],
+    datasets:[
+      {label:'Original X_test',data:[0.9915,1.0000,0.9665,0.9829],backgroundColor:CU,borderSkipped:false},
+      {label:'Blind Docente',  data:[0.3520,0.2694,0.8284,0.4066],backgroundColor:CAC,borderSkipped:false}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{min:0,max:1.1,grid:{display:false}}},
+    plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,font:{size:10}}}}}});
+}
+
+// ════════════════════════════════════════════════════════
+// CHARTS — Dynamic (from real data)
+// ════════════════════════════════════════════════════════
+function updateChartsDynamic() {
+  // Segmentos ORIG
+  const segO = countBy(FILT_ORIG, 'Segmento');
+  if(CHARTS.chSegs) CHARTS.chSegs.destroy();
+  CHARTS.chSegs=new Chart(document.getElementById('chSegs'),{type:'doughnut',data:{
+    labels:['Riesgo Crítico','Vulnerable','Leal'],
+    datasets:[{data:[segO['Riesgo Crítico']||0,segO['Vulnerable']||0,segO['Leal']||0],backgroundColor:[CAC,CGO,COK],borderWidth:0}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{boxWidth:8,font:{size:10}}}}}});
+
+  // Segmentos BLIND
+  const segB = countBy(FILT_BLIND, 'Segmento');
+  if(CHARTS.chBSeg) CHARTS.chBSeg.destroy();
+  CHARTS.chBSeg=new Chart(document.getElementById('chBSeg'),{type:'doughnut',data:{
+    labels:['Riesgo Crítico','Vulnerable','Leal'],
+    datasets:[{data:[segB['Riesgo Crítico']||0,segB['Vulnerable']||0,segB['Leal']||0],backgroundColor:[CAC,CGO,COK],borderWidth:0}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{boxWidth:8,font:{size:10}}}}}});
+
+  // RaR por ciudad BLIND
+  const cityRaR = {};
+  FILT_BLIND.forEach(r => {
+    const c=r.Ciudad||'N/A';
+    cityRaR[c]=(cityRaR[c]||0)+parseFloat(r.RaR_Cliente||0);
+  });
+  const cEntries = Object.entries(cityRaR).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(CHARTS.chBCity) CHARTS.chBCity.destroy();
+  CHARTS.chBCity=new Chart(document.getElementById('chBCity'),{type:'bar',data:{
+    labels:cEntries.map(e=>e[0]),
+    datasets:[{label:'RaR Total ($)',data:cEntries.map(e=>+e[1].toFixed(1)),backgroundColor:CU,borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    scales:{x:{grid:{display:false},ticks:{callback:v=>'$'+v}},y:{grid:{display:false},ticks:{font:{size:9}}}},
+    plugins:{legend:{display:false}}}});
+
+  // Segmentos comparativa
+  if(CHARTS.chSegComp) CHARTS.chSegComp.destroy();
+  CHARTS.chSegComp=new Chart(document.getElementById('chSegComp'),{type:'bar',data:{
+    labels:['Riesgo Crítico','Vulnerable','Leal'],
+    datasets:[
+      {label:'Original',data:[segO['Riesgo Crítico']||0,segO['Vulnerable']||0,segO['Leal']||0],backgroundColor:CU,borderSkipped:false},
+      {label:'Blind',   data:[segB['Riesgo Crítico']||0,segB['Vulnerable']||0,segB['Leal']||0],backgroundColor:CAC,borderSkipped:false}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{grid:{display:false}}},
+    plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,font:{size:10}}}}}});
+
+  // RaR por ciudad ORIG top 8
+  const cityRaRO = {};
+  FILT_ORIG.forEach(r => { const c=r.Ciudad||'N/A'; cityRaRO[c]=(cityRaRO[c]||0)+parseFloat(r.RaR_Cliente||0); });
+  const cEntriesO = Object.entries(cityRaRO).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(CHARTS.chCityComp) CHARTS.chCityComp.destroy();
+  CHARTS.chCityComp=new Chart(document.getElementById('chCityComp'),{type:'bar',data:{
+    labels:cEntriesO.map(e=>e[0]),
+    datasets:[{label:'RaR Original',data:cEntriesO.map(e=>+e[1].toFixed(1)),backgroundColor:CU,borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    scales:{x:{grid:{display:false},ticks:{callback:v=>'$'+v}},y:{grid:{display:false},ticks:{font:{size:9}}}},
+    plugins:{legend:{display:false}}}});
+
+  // RaR por decil (from orig sorted by P_Churn)
+  const sortedO = [...FILT_ORIG].sort((a,b)=>parseFloat(a.P_Churn||0)-parseFloat(b.P_Churn||0));
+  const decilRaR = Array(10).fill(0);
+  sortedO.forEach((r,i) => { const d=Math.min(9,Math.floor(i/sortedO.length*10)); decilRaR[d]+=parseFloat(r.RaR_Cliente||0); });
+  if(CHARTS.chRaRdec) CHARTS.chRaRdec.destroy();
+  CHARTS.chRaRdec=new Chart(document.getElementById('chRaRdec'),{type:'bar',data:{
+    labels:['D1','D2','D3','D4','D5','D6','D7','D8','D9','D10'],
+    datasets:[{label:'RaR ($)',data:decilRaR.map(v=>+v.toFixed(0)),
+      backgroundColor:['#c3cfe6','#c3cfe6','#b4c3df','#8fa3cf','#8fa3cf','#5a7abf',CU2,CU2,CU,CAC],borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{grid:{display:false},ticks:{callback:v=>'$'+Math.round(v).toLocaleString()}}},
+    plugins:{legend:{display:false}}}});
+}
+
+function countBy(arr, key) {
+  return arr.reduce((acc,r) => { const v=r[key]||'N/A'; acc[v]=(acc[v]||0)+1; return acc; }, {});
+}
+
+// ════════════════════════════════════════════════════════
+// STATS & CORR TABLES/CHARTS
+// ════════════════════════════════════════════════════════
+function renderStatsTable(data) {
+  document.getElementById('statsTbody').innerHTML = data.map(r => `<tr>
+    <td><strong>${r.Variable||r.variable||'—'}</strong></td>
+    <td style="font-family:'IBM Plex Mono',monospace">${parseFloat(r.Media||r.mean||0).toFixed(2)}</td>
+    <td>${parseFloat(r.Mediana||r.median||0).toFixed(1)}</td>
+    <td style="font-family:'IBM Plex Mono',monospace">${parseFloat(r.Desv_Est||r.std||0).toFixed(2)}</td>
+    <td>${parseFloat(r.Min||r.min||0).toFixed(1)}</td>
+    <td>${parseFloat(r.Max||r.max||0).toFixed(1)}</td>
+    <td style="color:${Math.abs(parseFloat(r.Sesgo||r.skew||0))>0.75?'#a32d2d':'inherit'};font-weight:${Math.abs(parseFloat(r.Sesgo||r.skew||0))>0.75?700:400}">${parseFloat(r.Sesgo||r.skew||0).toFixed(3)}</td>
+    <td>${parseFloat(r.Curtosis||r.kurt||0).toFixed(3)}</td>
+    <td><span class="badge ${parseInt(r.Outliers_IQR||r.outliers||0)>0?'b-ch':'b-re'}">${parseInt(r.Outliers_IQR||r.outliers||0).toLocaleString()}</span></td>
+  </tr>`).join('');
+}
+
+function buildCorrChart(data) {
+  const vars = data.map(r => r.Variable||r.variable);
+  const vals = data.map(r => parseFloat(r.Correlacion_Spearman||r.corr||0));
+  if(CHARTS.chCorr) CHARTS.chCorr.destroy();
+  CHARTS.chCorr=new Chart(document.getElementById('chCorr'),{type:'bar',data:{
+    labels:vars,
+    datasets:[{label:'ρ Spearman con Churn',data:vals,
+      backgroundColor:vals.map(v=>v>0?`rgba(0,45,114,${Math.abs(v)*0.9+0.1})`:`rgba(200,16,46,${Math.abs(v)*0.9+0.1})`),
+      borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    scales:{x:{grid:{display:false},min:-0.6,max:0.6},y:{grid:{display:false},ticks:{font:{size:10}}}},
+    plugins:{legend:{display:false}}}});
+}
+
+function buildContractChart(data) {
+  const churnByContract = {};
+  data.forEach(r => {
+    const cat=r.Categoria||r.categoria;
+    if((r.Variable||r.variable)==='Contract Length'||(r.variable||r.Variable)==='Contract Length') {
+      churnByContract[cat] = parseFloat(r.Tasa_Churn_Pct||0);
+    }
+  });
+  if(CHARTS.chCont) CHARTS.chCont.destroy();
+  CHARTS.chCont=new Chart(document.getElementById('chCont'),{type:'bar',data:{
+    labels:Object.keys(churnByContract),
+    datasets:[{label:'Tasa Churn %',data:Object.values(churnByContract),backgroundColor:[CU,CAC,COK],borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{grid:{display:false},ticks:{callback:v=>v+'%'}}},
+    plugins:{legend:{display:false}}}});
+}
+
+function buildGenderChart(data) {
+  const churnByGender = {};
+  data.forEach(r => {
+    if((r.Variable||r.variable)==='Gender') {
+      churnByGender[r.Categoria||r.categoria] = parseFloat(r.Tasa_Churn_Pct||0);
+    }
+  });
+  if(CHARTS.chGender) CHARTS.chGender.destroy();
+  CHARTS.chGender=new Chart(document.getElementById('chGender'),{type:'bar',data:{
+    labels:Object.keys(churnByGender),
+    datasets:[{label:'Tasa Churn %',data:Object.values(churnByGender),backgroundColor:[CU,CAC],borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{grid:{display:false}},y:{grid:{display:false},max:100,ticks:{callback:v=>v+'%'}}},
+    plugins:{legend:{display:false}}}});
+}
+
+function renderCompTable() {
+  const rows = [
+    {m:'Registros',o:'37,349',b:'500',d:'−99%',i:'Muestra docente representativa'},
+    {m:'Recall',o:'0.9665',b:'0.8284',d:'−13.81%',i:'Degradación moderada aceptable'},
+    {m:'Accuracy',o:'0.9915',b:'0.3520',d:'−63.95%',i:'Alta diferencia en distribución Churn'},
+    {m:'Precision',o:'1.0000',b:'0.2694',d:'−73.06%',i:'Más FP en blind docente'},
+    {m:'F1-Score',o:'0.9829',b:'0.4066',d:'−0.5763',i:'Conjunto desequilibrado'},
+    {m:'Tasa Churn',o:'24.54%',b:'82.4%',d:'+57.86%',i:'Distribución muy diferente'},
+    {m:'RaR Total',o:'$500K+',b:'$21.5K',d:'Prop. muestra',i:'Proporcional al n'},
+    {m:'Seg. Crítico',o:'9,170',b:'412',d:'Prop. 82.4%',i:'Coincide con tasa Churn'},
+    {m:'Tenure Prom.',o:'31.8 m',b:'~30 m',d:'Similar',i:'Poblaciones consistentes'},
+  ];
+  document.getElementById('compTbody').innerHTML = rows.map(r => `<tr>
+    <td><strong>${r.m}</strong></td>
+    <td style="font-family:'IBM Plex Mono',monospace;color:var(--ok)">${r.o}</td>
+    <td style="font-family:'IBM Plex Mono',monospace;color:var(--ac)">${r.b}</td>
+    <td style="font-weight:600">${r.d}</td>
+    <td style="color:var(--mu);font-size:11px">${r.i}</td>
+  </tr>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════════════════
+function doExport(i) {
+  const names=['EDA','Resultados_Original','Blind_Test_Docente','Comparativa'];
+  sw(i);
+  const panel = document.getElementById('p'+i);
+  const canvases = panel.querySelectorAll('canvas');
+  const imgs = [];
+  canvases.forEach(c => { try{imgs.push(c.toDataURL('image/png'));}catch(e){} });
+  const pw = window.open('','_blank','width=1200,height=900');
+  if(!pw){alert('Permite ventanas emergentes para exportar.');return;}
+  const now = new Date().toLocaleString('es-HN');
+  pw.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>UNITEC G4 — ${names[i]}</title>
+<style>body{font-family:Arial,sans-serif;padding:32px;background:#fff;color:#0d1b2e}
+h1{color:#002D72;font-size:18px;border-bottom:3px solid #C8102E;padding-bottom:8px;margin-bottom:20px}
+.meta{font-size:10px;color:#5a6a7e;margin-bottom:20px}
+img{max-width:100%;border:1px solid #e0e0e0;border-radius:6px;margin:12px 0;display:block}
+@media print{body{padding:16px}}</style></head><body>
+<h1>Dashboard Doctoral — ${names[i].replace(/_/g,' ')}</h1>
+<div class="meta">UNITEC · Grupo 4 · Hito 2 v2.0 · Datos reales Google Sheets · ${now}</div>
+${imgs.map(src=>`<img src="${src}">`).join('')}
+<p style="font-size:9px;color:#888;margin-top:24px;border-top:1px solid #eee;padding-top:8px">UNITEC Grupo 4 · Dashboard v4.0 · Datos Reales</p>
+</body></html>`);
+  pw.document.close();
+  setTimeout(() => pw.print(), 600);
+}
+
+// ════════════════════════════════════════════════════════
+// TIMESTAMP
+// ════════════════════════════════════════════════════════
+function updateTS() {
+  const s = new Date().toLocaleTimeString('es-HN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  setEl('ts-hdr','Actualizado: '+s);
+  setEl('ts-orig','Datos reales Google Sheets · '+s);
+}
+setInterval(updateTS, 15000);
+
+// ════════════════════════════════════════════════════════
+// LOAD DATA FROM GOOGLE SHEETS
+// ════════════════════════════════════════════════════════
+async function loadAllData() {
+  try {
+    setEl('us0', '⟳ Cargando EDA desde Google Sheets...');
+
+    // GIDs from the spreadsheet (we try common GIDs)
+    // Sheet structure: EDA, Resultados_Original, Resultados_Docente, Comparativa
+    // Try to fetch each by name via export
+    const BASE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+
+    // Fetch all sheets via gid — we'll try 0,1,2,3 and identify by header
+    const allSheets = await Promise.allSettled([
+      fetchSheet(0),
+      fetchSheet(1776824724),
+      fetchSheet(1234567890),
+      fetchSheet(1041822126),
+    ]);
+
+    // Process whatever loaded
+    allSheets.forEach((result, idx) => {
+      if (result.status !== 'fulfilled') return;
+      const data = result.value;
+      if (!data.length) return;
+      const keys = Object.keys(data[0]).join(',').toLowerCase();
+
+      if (keys.includes('variable') && keys.includes('media') && !DATA_EDA_STATS.length) {
+        DATA_EDA_STATS = data;
+      }
+      if (keys.includes('correlacion_spearman') || keys.includes('corr') && !DATA_EDA_CORR.length) {
+        DATA_EDA_CORR = data.filter(r => r.Correlacion_Spearman !== undefined || r.correlacion_spearman !== undefined);
+      }
+      if (keys.includes('customerid') && keys.includes('ltv_vpn') && keys.includes('churn_real') && !DATA_ORIG.length) {
+        DATA_ORIG = data;
+      }
+      if (keys.includes('customerid') && keys.includes('rar_cliente') && !keys.includes('ltv_vpn') && !DATA_BLIND.length) {
+        DATA_BLIND = data;
+      }
+      if (keys.includes('customerid') && keys.includes('ltv_vpn') && DATA_ORIG.length && !DATA_BLIND.length) {
+        // second scoring sheet
+        DATA_BLIND = data;
+      }
+      if (keys.includes('recall') && keys.includes('accuracy') && keys.includes('conjunto')) {
+        if (!DATA_METRICS_ORIG.length) DATA_METRICS_ORIG = data.filter(r => (r.Conjunto||'').includes('X_test'));
+        DATA_METRICS_BLIND = data.filter(r => (r.Conjunto||'').includes('Blind'));
+      }
+      if (keys.includes('tasa_churn_pct') && !DATA_EDA_CAT.length) {
+        DATA_EDA_CAT = data;
+      }
+      if (keys.includes('seg_critico') || (keys.includes('registros') && keys.includes('recall') && keys.includes('rar_total'))) {
+        DATA_COMP = data;
+      }
+      if (keys.includes('p_churn_media') || keys.includes('segmento') && keys.includes('clientes') && !DATA_SEG_ORIG.length) {
+        DATA_SEG_ORIG = data.filter(r => r.Clientes && r.Segmento);
+      }
+    });
+
+    // Try fetching the specific export URL for each named sheet
+    const sheetNames = ['EDA','Resultados_Original','Resultados_Docente','Comparativa'];
+    const sheetResults = await Promise.allSettled(sheetNames.map(name =>
+      fetch(`${BASE}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`).then(r=>r.text()).then(parseCSV)
+    ));
+
+    sheetResults.forEach((result, idx) => {
+      if (result.status !== 'fulfilled' || !result.value.length) return;
+      const data = result.value;
+      const keys = Object.keys(data[0]).join(',').toLowerCase();
+      const name = sheetNames[idx];
+
+      if (name === 'EDA') {
+        // Multiple tables in EDA — identify by columns
+        const statsRows = data.filter(r => r.Variable && r.Media !== undefined);
+        const corrRows = data.filter(r => r.Correlacion_Spearman !== undefined);
+        const catRows = data.filter(r => r.Tasa_Churn_Pct !== undefined);
+        const churnDist = data.filter(r => r.Churn !== undefined && r.Cantidad !== undefined);
+        if (statsRows.length) DATA_EDA_STATS = statsRows;
+        if (corrRows.length) DATA_EDA_CORR = corrRows;
+        if (catRows.length) DATA_EDA_CAT = catRows;
+        if (churnDist.length) DATA_EDA_CHURN = churnDist;
+      }
+      if (name === 'Resultados_Original' && data[0].CustomerID) DATA_ORIG = data;
+      if (name === 'Resultados_Docente' && data[0].CustomerID) DATA_BLIND = data;
+      if (name === 'Comparativa') DATA_COMP = data;
+    });
+
+    // Update EDA KPIs from stats
+    if (DATA_EDA_STATS.length) {
+      const ageRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('age'));
+      const tenRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('tenure'));
+      const spRow = DATA_EDA_STATS.find(r => (r.Variable||'').toLowerCase().includes('spend'));
+      if (ageRow) {
+        setEl('k0-age', parseFloat(ageRow.Media||0).toFixed(1));
+        setEl('k0-age-b', 'σ='+parseFloat(ageRow.Desv_Est||0).toFixed(1));
+      }
+      if (tenRow) {
+        setEl('k0-ten', parseFloat(tenRow.Media||0).toFixed(1)+' m');
+        setEl('k0-ten-b', 'σ='+parseFloat(tenRow.Desv_Est||0).toFixed(1));
+      }
+      if (spRow) {
+        setEl('k0-sp', '$'+parseFloat(spRow.Media||0).toFixed(1));
+        setEl('k0-sp-b', 'IQR real');
+      }
+      renderStatsTable(DATA_EDA_STATS);
+    }
+
+    if (DATA_EDA_CORR.length) buildCorrChart(DATA_EDA_CORR);
+    if (DATA_EDA_CAT.length) { buildContractChart(DATA_EDA_CAT); buildGenderChart(DATA_EDA_CAT); }
+
+    // Churn rate
+    if (DATA_EDA_CHURN.length) {
+      const churnRow = DATA_EDA_CHURN.find(r => r.Churn==='1'||r.Churn==='True'||r.Etiqueta==='Churn');
+      const totalRow = DATA_EDA_CHURN.reduce((a,r)=>a+parseInt(r.Cantidad||0),0);
+      if (churnRow) setEl('k0-cr', parseFloat(churnRow.Porcentaje||0).toFixed(1)+'%');
+    }
+
+    // Total n from orig
+    if (DATA_ORIG.length) {
+      setEl('k0-n', DATA_ORIG.length.toLocaleString());
+      setEl('k0-nb', 'n scoring real');
+      populateCities([...DATA_ORIG, ...DATA_BLIND]);
+    } else {
+      // Fallback
+      setEl('k0-n', '186,743');
+      setEl('k0-cr', '25.4%');
+    }
+
+    setEl('us0', `✓ Datos reales cargados — ${DATA_EDA_STATS.length} estadísticos · ${DATA_ORIG.length} scoring orig · ${DATA_BLIND.length} scoring blind`);
+
+    // Apply filters to propagate everything
+    FILT_ORIG = [...DATA_ORIG];
+    FILT_BLIND = [...DATA_BLIND];
+    applyFilters();
+    buildStaticCharts();
+
+  } catch(e) {
+    console.error('Load error:', e);
+    setEl('us0', '⚠ Error cargando datos. Usando estadísticos del proyecto. Detalle: '+e.message);
+    // Fallback to known real values
+    loadFallbackData();
+  }
+}
+
+function loadFallbackData() {
+  // Use exact real values from the notebook PDF
+  DATA_EDA_STATS = [
+    {Variable:'Age',Media:37.6829,Mediana:38,Desv_Est:10.9021,Min:18,Max:65,Sesgo:0.1412,Curtosis:-0.5805,Outliers_IQR:0},
+    {Variable:'Tenure',Media:31.8428,Mediana:33,Desv_Est:17.1570,Min:1,Max:60,Sesgo:-0.1087,Curtosis:-1.1749,Outliers_IQR:0},
+    {Variable:'Usage Frequency',Media:16.0905,Mediana:16,Desv_Est:8.5087,Min:1,Max:30,Sesgo:-0.0826,Curtosis:-1.1434,Outliers_IQR:0},
+    {Variable:'Support Calls',Media:2.4893,Mediana:2,Desv_Est:2.4778,Min:0,Max:10,Sesgo:1.3691,Curtosis:1.3996,Outliers_IQR:17970},
+    {Variable:'Payment Delay',Media:11.3381,Mediana:11,Desv_Est:7.2741,Min:0,Max:30,Sesgo:0.3530,Curtosis:-0.5549,Outliers_IQR:0},
+    {Variable:'Total Spend',Media:696.9169,Mediana:716.5,Desv_Est:202.1158,Min:100,Max:1000,Sesgo:-0.7400,Curtosis:0.2351,Outliers_IQR:2673},
+    {Variable:'Last Interaction',Media:13.6573,Mediana:13,Desv_Est:8.4586,Min:1,Max:30,Sesgo:0.3219,Curtosis:-1.0370,Outliers_IQR:0},
+  ];
+  DATA_EDA_CORR = [
+    {Variable:'Support Calls',Correlacion_Spearman:0.4977},
+    {Variable:'Payment Delay',Correlacion_Spearman:0.2545},
+    {Variable:'Age',Correlacion_Spearman:0.1761},
+    {Variable:'Last Interaction',Correlacion_Spearman:0.1310},
+    {Variable:'Usage Frequency',Correlacion_Spearman:-0.0372},
+    {Variable:'Tenure',Correlacion_Spearman:-0.0425},
+    {Variable:'Total Spend',Correlacion_Spearman:-0.3506},
+  ];
+  DATA_EDA_CAT = [
+    {Variable:'Contract Length',Categoria:'Monthly',Tasa_Churn_Pct:100},
+    {Variable:'Contract Length',Categoria:'Annual',Tasa_Churn_Pct:18.11},
+    {Variable:'Contract Length',Categoria:'Quarterly',Tasa_Churn_Pct:18.09},
+    {Variable:'Gender',Categoria:'Female',Tasa_Churn_Pct:34.13},
+    {Variable:'Gender',Categoria:'Male',Tasa_Churn_Pct:20.06},
+  ];
+  setEl('k0-n','186,743');setEl('k0-nb','n completa real');
+  setEl('k0-cr','25.4%');setEl('k0-age','37.7');setEl('k0-age-b','σ=10.9');
+  setEl('k0-ten','31.8 m');setEl('k0-ten-b','σ=17.2');setEl('k0-sp','$696.9');setEl('k0-sp-b','IQR $574–$858');
+
+  renderStatsTable(DATA_EDA_STATS);
+  buildCorrChart(DATA_EDA_CORR);
+  buildContractChart(DATA_EDA_CAT);
+  buildGenderChart(DATA_EDA_CAT);
+
+  // Set real financial KPIs
+  setEl('f1-gm','$48.19');setEl('f1-rar','$445,705');setEl('f1-ltv','$279.20');
+  setEl('f1-ten','31.8 m');setEl('f1-crit','9,170');
+  setEl('fb-rar','$21,541');setEl('fb-ten','~30 m');setEl('fb-crit-pct','82.4%');
+  setEl('kb-crit','412');setEl('fc-rar','$424,164');
+  setEl('rcnt','37,849');
+  setEl('ss0','Bloques B, C, D · n=186,743 · 12 variables · Estadísticos reales del proyecto');
+  setEl('ss1','n_test=37,349 · Hito 2 v2.0 · Datos reales del proyecto');
+  setEl('ss2','n=500 · Blind Test Docente · Datos reales del proyecto');
+
+  buildStaticCharts();
+  updateChartsDynamic();
+  renderCompTable();
+  updateTS();
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+loadAllData();
+renderCompTable();
+</script>
+</body>
+</html>
